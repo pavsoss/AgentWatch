@@ -191,6 +191,4 @@ Apache 2.0
 </div>
 ```
 
----
 
-Push that. That's the README. 🔥
