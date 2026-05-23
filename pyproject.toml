@@ -50,6 +50,15 @@ otel = [
 crypto = [
   "cryptography>=43.0.0",
 ]
+langchain = [
+  "langchain-core>=0.3.0",
+]
+autogpt = [
+  # AutoGPT adapter works standalone; install AutoGPT separately
+]
+openclaw = [
+  # OpenClaw adapter works standalone; install OpenClaw separately
+]
 dev = [
   "pytest>=8.3.0",
   "pytest-asyncio>=0.24.0",
@@ -59,7 +68,7 @@ dev = [
   "httpx>=0.27.0",
 ]
 all = [
-  "agentwatch[embeddings,otel,crypto]",
+  "agentwatch[embeddings,otel,crypto,langchain]",
 ]
 
 [project.scripts]
