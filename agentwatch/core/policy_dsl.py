@@ -272,6 +272,7 @@ def _mini_yaml(text: str) -> dict[str, Any]:
     rules = [r for r in rules if "if" in r or "then" in r]
     return {"rules": rules}
 
+
 def policy_config_schema() -> dict[str, Any]:
     """Return the JSON Schema document for the safety policy config."""
     return {
@@ -292,13 +293,19 @@ def policy_config_schema() -> dict[str, Any]:
                         "if": {"type": "string"},
                         "then": {
                             "type": "string",
-                            "enum": ["allow", "block", "require_approval", "pause_and_alert", "log_only"]
+                            "enum": [
+                                "allow",
+                                "block",
+                                "require_approval",
+                                "pause_and_alert",
+                                "log_only",
+                            ],
                         },
-                        "label": {"type": "string"}
-                    }
-                }
+                        "label": {"type": "string"},
+                    },
+                },
             }
-        }
+        },
     }
 
 
@@ -307,48 +314,57 @@ def validate_policy_dict(data: Any) -> None:
     if not isinstance(data, dict):
         raise ValueError("Invalid safety policy: root must be a dictionary")
 
-    #Check required fields
+    # Check required fields
     if "rules" not in data:
         raise ValueError("Invalid safety policy: missing required property 'rules'")
 
-    #Check for additional properties at root
+    # Check for additional properties at root
     allowed_root_keys = {"rules"}
     extra_root_keys = set(data.keys()) - allowed_root_keys
     if extra_root_keys:
-        raise ValueError(f"Invalid safety policy: additional properties not allowed: {sorted(list(extra_root_keys))}")
-        
+        raise ValueError(
+            f"Invalid safety policy: additional properties not allowed: {sorted(list(extra_root_keys))}"
+        )
+
     rules = data["rules"]
     if not isinstance(rules, list):
         raise ValueError("Invalid safety policy: 'rules' property must be an array")
-        
+
     valid_actions = {action.value for action in PolicyAction}
-    
+
     for idx, rule in enumerate(rules):
         if not isinstance(rule, dict):
             raise ValueError(f"Invalid safety policy: rules[{idx}] must be an object")
-            
-        #Check additional properties in rule
+
+        # Check additional properties in rule
         allowed_rule_keys = {"if", "then", "label"}
         extra_rule_keys = set(rule.keys()) - allowed_rule_keys
         if extra_rule_keys:
-            raise ValueError(f"Invalid safety policy: rules[{idx}] additional properties not allowed: {sorted(list(extra_rule_keys))}")
-            
-        #Check required fields in rule
+            raise ValueError(
+                f"Invalid safety policy: rules[{idx}] additional properties not allowed: {sorted(list(extra_rule_keys))}"
+            )
+
+        # Check required fields in rule
         if "if" not in rule:
             raise ValueError(f"Invalid safety policy: rules[{idx}] missing required property 'if'")
         if "then" not in rule:
-            raise ValueError(f"Invalid safety policy: rules[{idx}] missing required property 'then'")
-            
-        #Check for property types and values
+            raise ValueError(
+                f"Invalid safety policy: rules[{idx}] missing required property 'then'"
+            )
+
+        # Check for property types and values
         if not isinstance(rule["if"], str):
             raise ValueError(f"Invalid safety policy: rules[{idx}].if must be a string")
         if not isinstance(rule["then"], str):
             raise ValueError(f"Invalid safety policy: rules[{idx}].then must be a string")
         if rule["then"] not in valid_actions:
-            raise ValueError(f"Invalid safety policy: rules[{idx}].then must be one of {sorted(list(valid_actions))}, got '{rule['then']}'")
-            
+            raise ValueError(
+                f"Invalid safety policy: rules[{idx}].then must be one of {sorted(list(valid_actions))}, got '{rule['then']}'"
+            )
+
         if "label" in rule:
             if not isinstance(rule["label"], str):
                 raise ValueError(f"Invalid safety policy: rules[{idx}].label must be a string")
+
 
 __all__ = ["PolicyEngine", "Rule", "PolicyAction", "PolicyDecision", "policy_config_schema"]
