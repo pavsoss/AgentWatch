@@ -501,9 +501,13 @@ def status(
                 resp.raise_for_status()
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code == 401:
-                    console.print(f"[red]Authentication failed. Check your API key or permissions for {api_url}[/red]")
+                    console.print(
+                        f"[red]Authentication failed. Check your API key or permissions for {api_url}[/red]"
+                    )
                 else:
-                    console.print(f"[red]API request failed with status {exc.response.status_code}: {exc.response.text}[/red]")
+                    console.print(
+                        f"[red]API request failed with status {exc.response.status_code}: {exc.response.text}[/red]"
+                    )
                 raise typer.Exit(1)
             except Exception as exc:
                 console.print(f"[red]Failed to connect to API at {api_url}: {exc}[/red]")
