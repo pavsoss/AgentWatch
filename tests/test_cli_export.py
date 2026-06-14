@@ -99,8 +99,8 @@ def test_export_md(mock_httpx_client, tmp_path):
 def test_export_invalid_format():
     result = runner.invoke(app, ["export", "abc-123", "--format", "xml"])
     assert result.exit_code != 0
-    assert "Invalid value for '--format'" in result.stdout + (result.stderr or "")
-
+    assert "Invalid value" in result.stdout + (result.stderr or "")
+    assert "not one of 'json', 'md'" in result.stdout + (result.stderr or "")
 
 def test_export_404(mock_httpx_client):
     mock_instance, mock_response = mock_httpx_client
