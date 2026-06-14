@@ -475,6 +475,66 @@ def serve(
 
 
 # ─────────────────────────────────────────────
+# status command
+# ─────────────────────────────────────────────
+
+
+@app.command()
+def status(
+    api_url: str = typer.Option("http://localhost:8000", "--api"),
+) -> None:
+    """[bold]Show[/bold] a real-time summary of AgentWatch runtime status."""
+
+    async def _run() -> None:
+        try:
+            import httpx
+        except ImportError:
+            console.print("[red]httpx not installed. Run: pip install httpx[/red]")
+            raise typer.Exit(1)
+
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.get(
+                    f"{api_url}/api/v1/dashboard/summary",
+                    timeout=10.0,
+                )
+                resp.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 401:
+                    console.print(f"[red]Authentication failed. Check your API key or permissions for {api_url}[/red]")
+                else:
+                    console.print(f"[red]API request failed with status {exc.response.status_code}: {exc.response.text}[/red]")
+                raise typer.Exit(1)
+            except Exception as exc:
+                console.print(f"[red]Failed to connect to API at {api_url}: {exc}[/red]")
+                raise typer.Exit(1)
+
+        data = resp.json()
+
+        console.print("\n[bold cyan]AgentWatch Runtime Status[/bold cyan]")
+        console.print("────────────────────────────────\n")
+
+        console.print("[bold]Agent Activity[/bold]")
+        console.print(f"  Active sessions:        {data.get('active_sessions', 0)}")
+        console.print(f"  Failed sessions:        {data.get('failed_sessions', 0)}")
+        console.print(f"  Safety-blocked sessions: {data.get('blocked_sessions', 0)}\n")
+
+        console.print("[bold]Resource Utilization[/bold]")
+        console.print(f"  Total tokens consumed:  {data.get('total_tokens', 0):,}")
+        console.print(f"  Estimated cost:         ${data.get('estimated_cost_usd', 0.0):.4f}\n")
+
+        safety_stats = data.get("safety_stats", {})
+        eb_stats = data.get("event_bus_stats", {})
+
+        console.print("[bold]Safety & Event Pipeline[/bold]")
+        console.print(f"  Blocked operations:     {safety_stats.get('blocked', 0)}")
+        console.print(f"  Event throughput:       {eb_stats.get('total_published', 0):,} processed")
+        console.print(f"  Active subscribers:     {eb_stats.get('active_subscribers', 0)}\n")
+
+    asyncio.run(_run())
+
+
+# ─────────────────────────────────────────────
 # Print helpers
 # ─────────────────────────────────────────────
 
