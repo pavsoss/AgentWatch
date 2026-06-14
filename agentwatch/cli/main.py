@@ -536,6 +536,8 @@ def status(
         console.print(f"  Active subscribers:     {eb_stats.get('active_subscribers', 0)}\n")
 
     asyncio.run(_run())
+
+
 # verify-env command
 # ─────────────────────────────────────────────
 
