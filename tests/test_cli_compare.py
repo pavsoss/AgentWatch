@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from typer.testing import CliRunner
 
@@ -13,6 +14,7 @@ DUMMY_CONF_1 = {
     "goal_alignment": 0.68,
     "consistency_score": 0.7,
     "anomaly_flags": ["hallucinated_success"],
+    "hallucination_risk": "HIGH",
     "explanation": "Test explanation",
     "component_scores": {},
 }
@@ -23,6 +25,7 @@ DUMMY_CONF_2 = {
     "goal_alignment": 0.93,
     "consistency_score": 0.9,
     "anomaly_flags": [],
+    "hallucination_risk": "LOW",
     "explanation": "Test explanation",
     "component_scores": {},
 }

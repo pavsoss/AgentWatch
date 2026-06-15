@@ -759,29 +759,70 @@ def compare(
                 raise typer.Exit(1)
 
         def _compute_metrics(conf, rep):
+            """
+            Compute comparison metrics from API responses.
+
+            Required confidence fields:
+            - overall_score
+
+            Optional fields:
+            - goal_alignment
+            - hallucination_risk
+            - anomaly_flags
+
+            Missing optional fields are rendered as N/A to maintain
+            compatibility with older AgentWatch API versions.
+            """
             overall = conf.get("overall_score")
             alignment = conf.get("goal_alignment")
-            flags = conf.get("anomaly_flags")
-
-            if flags is None:
-                hrisk = "N/A"
-            else:
-                hrisk = "HIGH" if "hallucinated_success" in flags else "LOW"
 
             steps = rep.get("steps", [])
             failed_steps = 0
             safety_blocks = 0
 
+            from agentwatch.core.schema import AgentEvent
+            from agentwatch.reasoning.hallucination import (
+                HallucinationClassifier,
+                HallucinationRisk,
+            )
+
+            # Preferred: if confidence_response has hallucination_risk, use it.
+            # Otherwise, derive it from official HallucinationClassifier.
+            hrisk = conf.get("hallucination_risk")
+            compute_hrisk = hrisk is None
+
+            if compute_hrisk:
+                classifier = HallucinationClassifier()
+                highest_risk = HallucinationRisk.LOW
+
             for step in steps:
-                ev = step.get("event", {})
-                etype = ev.get("event_type", "").lower()
-                status = ev.get("status", "").lower()
+                ev_data = step.get("event", {})
+                
+                # Check for failures and safety blocks
+                etype = ev_data.get("event_type", "").lower()
+                status = ev_data.get("status", "").lower()
                 if etype == "tool_error" or status == "failure":
                     failed_steps += 1
 
-                safety = ev.get("safety")
+                safety = ev_data.get("safety")
                 if etype == "safety_block" or (safety and safety.get("blocked")):
                     safety_blocks += 1
+
+                # Classify hallucination risk using the official source of truth
+                if compute_hrisk:
+                    try:
+                        ev = AgentEvent(**ev_data)
+                        classifier.observe(ev)
+                        f = classifier.classify(ev)
+                        if f.risk == HallucinationRisk.HIGH:
+                            highest_risk = HallucinationRisk.HIGH
+                        elif f.risk == HallucinationRisk.MEDIUM and highest_risk == HallucinationRisk.LOW:
+                            highest_risk = HallucinationRisk.MEDIUM
+                    except Exception:  # noqa: S112
+                        continue
+
+            if compute_hrisk:
+                hrisk = highest_risk.value.upper()
 
             return {
                 "overall": overall,
