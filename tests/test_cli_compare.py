@@ -66,6 +66,15 @@ def mock_httpx_client():
             else:
                 mock_response.status_code = 404
 
+            if mock_response.status_code >= 400:
+                req = httpx.Request("GET", url)
+                resp = httpx.Response(mock_response.status_code, request=req)
+                mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+                    "mocked status error", request=req, response=resp
+                )
+            else:
+                mock_response.raise_for_status.return_value = None
+
             return mock_response
 
         mock_instance.get.side_effect = mock_get
