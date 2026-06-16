@@ -232,6 +232,7 @@ _alerting = AlertingEngine(
     AlertingConfig(
         slack_webhook_url=os.getenv("SLACK_WEBHOOK_URL"),
         pagerduty_webhook_url=os.getenv("PAGERDUTY_WEBHOOK_URL"),
+        webhook_signing_secret=os.getenv("AGENTWATCH_WEBHOOK_SIGNING_SECRET"),
     )
 )
 _ws_clients: list[WebSocket] = []
