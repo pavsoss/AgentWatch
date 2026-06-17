@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, NoReturn
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
 app = typer.Typer(
     name="agentwatch",
     help="AgentWatch — Reliability, Safety, and Observability Layer for AI Agents",
-    add_completion=False,
+    add_completion=True,
     rich_markup_mode="rich",
 )
 session_app = typer.Typer(name="session", help="Manage AgentWatch sessions.")
@@ -33,10 +34,115 @@ app.add_typer(session_app)
 
 console = Console()
 
+session_app = typer.Typer(
+    name="session", help="Manage and inspect agent sessions", no_args_is_help=True
+)
+server_app = typer.Typer(
+    name="server", help="Manage the AgentWatch API server", no_args_is_help=True
+)
+safety_app = typer.Typer(
+    name="safety",
+    help="AgentWatch Safety & Risk Engine. Analyze shell commands against security policies.",
+    rich_markup_mode="rich",
+    no_args_is_help=True,
+)
 
-# ─────────────────────────────────────────────
+app.add_typer(session_app)
+app.add_typer(server_app)
+app.add_typer(safety_app)
+
+
+_IN_REPL = False
+
+
+@app.callback(invoke_without_command=True)
+def main_callback(ctx: typer.Context):
+    """AgentWatch CLI with ASCII Animation"""
+    global _IN_REPL
+    if _IN_REPL:
+        return
+
+    ascii_art = [
+        r"    ___                    __ _       __      __       __  ",
+        r"   /   |  ____  ___  ____ / /| |     / /___ _/ /______/ /_ ",
+        r"  / /| | / __ `/ _ \/ __ \ __/ | /| / / __ `/ __/ ___/ __ \\",
+        r" / ___ |/ /_/ /  __/ / / / /_  |/ |/ / /_/ / /_/ /__/ / / /",
+        r"/_/  |_|\__, /\___/_/ /_/\__/  |__/|__/\__,_/\__/\___/_/ /_/",
+        r"       /____/                                              ",
+    ]
+
+    from agentwatch.cli.animator import (
+        cinematic_logo_reveal,
+        matrix_type_print,
+        print_systematic_menu,
+    )
+
+    if ctx.invoked_subcommand is None:
+        cinematic_logo_reveal(ascii_art)
+        matrix_type_print("Initializing runtime components...", color="90;3m", delay=0.01)
+        print_systematic_menu()
+        _IN_REPL = True
+        try:
+            _start_repl_session()
+        finally:
+            _IN_REPL = False
+
+
+def _start_repl_session():
+    """Run an interactive REPL shell for the CLI."""
+    import os
+    import shlex
+
+    from rich.panel import Panel
+    from rich.prompt import Prompt
+
+    from agentwatch.cli.animator import matrix_type_print
+
+    console.print()
+    console.print(
+        Panel(
+            "[dim]Enter commands directly (e.g. 'safety check ...', 'session list').\n"
+            "Type [bold cyan]clear[/bold cyan] to wipe screen, or [bold red]exit[/bold red] to terminate.[/dim]",
+            title="[bold cyan]⚡ AGENTWATCH INTERACTIVE TERMINAL ⚡[/bold cyan]",
+            border_style="cyan",
+            padding=(0, 2),
+        )
+    )
+
+    while True:
+        try:
+            # High-end cinematic prompt
+            cmd_line = Prompt.ask(
+                "\n[bold cyan]AW[/bold cyan][dim]:[/dim][bold green]CORE[/bold green] [bold white]>[/bold white]"
+            )
+            cmd_line = cmd_line.strip()
+            if not cmd_line:
+                continue
+
+            cmd_lower = cmd_line.lower()
+            if cmd_lower in ("exit", "quit"):
+                matrix_type_print("Terminating AgentWatch session...", color="dim")
+                break
+
+            if cmd_lower in ("clear", "cls"):
+                os.system("cls" if os.name == "nt" else "clear")  # nosec # noqa: S605, S607
+                continue
+
+            args = shlex.split(cmd_line)
+            try:
+                app(args, standalone_mode=False)
+            except SystemExit:
+                pass
+            except Exception as e:
+                console.print(f"[red]Error executing command:[/red] {e}")
+        except (KeyboardInterrupt, EOFError):
+            matrix_type_print("\nTerminating AgentWatch session...", color="dim")
+            break
+
+
+# ---------------------------------------------
 # Helpers
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
 def _status_color(status: str) -> str:
@@ -107,7 +213,7 @@ def _handle_http_status_error(exc: httpx.HTTPStatusError, api_url: str) -> NoRet
 
 # ─────────────────────────────────────────────
 # NEW HELPER: Dry-run printer
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
 def _dry_run_print(action: str, detail: str = "") -> None:
@@ -116,12 +222,12 @@ def _dry_run_print(action: str, detail: str = "") -> None:
     console.print(f"[bold yellow][DRY-RUN][/bold yellow] Would {action}{detail_str}")
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # watch command — wrap an agent run
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
-@app.command()
+@session_app.command(name="watch")
 def watch(
     prompt: str = typer.Argument(..., help="Prompt to run with Claude Code"),
     model: str = typer.Option("claude-opus-4-5", "--model", "-m"),
@@ -234,12 +340,12 @@ def watch(
     asyncio.run(_run())
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # replay command
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
-@app.command()
+@session_app.command(name="replay")
 def replay(
     session_file: Path = typer.Argument(..., help="Path to session JSON file"),
     speed: str = typer.Option("instant", "--speed", "-s", help="instant|fast|normal|slow"),
@@ -311,12 +417,12 @@ def replay(
     asyncio.run(_run())
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # sessions command
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
-@app.command()
+@session_app.command(name="list")
 def sessions(
     api_url: str = typer.Option("http://localhost:8000", "--api"),
     limit: int = typer.Option(20, "--limit", "-n"),
@@ -363,7 +469,7 @@ class ExportFormat(str, Enum):
     md = "md"
 
 
-@app.command()
+@session_app.command(name="export")
 def export(
     session_id: str = typer.Argument(..., help="ID of the session to export"),
     format: ExportFormat = typer.Option(
@@ -515,10 +621,10 @@ def export(
 
 # ─────────────────────────────────────────────
 # confidence command
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
-@app.command()
+@session_app.command(name="score")
 def confidence(
     session_file: Path = typer.Argument(..., help="Path to session JSON file"),
 ) -> None:
@@ -592,42 +698,93 @@ def confidence(
     console.print(f"\n[dim]{result.explanation}[/dim]")
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # safety command
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
-@app.command()
+@safety_app.command(name="check")
 def safety(
     command: str = typer.Argument(..., help="Command to risk-score"),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
-    """[bold]Score[/bold] the risk level of a shell command."""
+    """
+    [bold]Score[/bold] the risk level of a shell command.
+
+    [b]Example Usage:[/b]
+    [dim]python -m agentwatch.cli.main safety check "rm -rf /var/log"[/dim]
+    """
+    from rich.panel import Panel
+    from rich.progress import Progress, SpinnerColumn, TextColumn
+
+    from agentwatch.cli.animator import matrix_type_print
     from agentwatch.core.safety import RiskScorer
     from agentwatch.core.schema import ToolCallData
 
     scorer = RiskScorer()
     tool = ToolCallData(tool_name="bash", raw_command=command, arguments={"command": command})
-    level, score, reasons, policies = scorer.score(tool)
 
+    # Live animated analysis phase
+    with Progress(
+        SpinnerColumn(spinner_name="dots2", style="cyan"),
+        TextColumn("[cyan]{task.description}[/cyan]"),
+        transient=True,
+    ) as progress:
+        task = progress.add_task("Analyzing command vectors...", total=None)
+        time.sleep(0.4)
+        progress.update(task, description="Cross-referencing security policies...")
+        time.sleep(0.3)
+        progress.update(task, description="Evaluating what-if scenario impact...")
+        time.sleep(0.3)
+
+    level, score, reasons, policies = scorer.score(tool)
     color = _risk_color(level.value)
-    console.print(f"\nCommand: [bold]{command}[/bold]")
-    console.print(f"Risk:    [{color}]{level.value.upper()}[/{color}] (score: {score:.2f})")
+
+    matrix_type_print("THREAT ANALYSIS COMPLETE", color="1;96m", delay=0.02)
+
+    # Constructing What-If scenario based on risk level
+    if score >= 0.8:
+        what_if = "If executed, this command could permanently destroy critical data, compromise host integrity, or create severe security vulnerabilities. Recovery would require full system restoration."
+    elif score >= 0.5:
+        what_if = "If executed, this command may alter important system configurations, expose sensitive network ports, or unexpectedly modify local files."
+    elif score >= 0.2:
+        what_if = "If executed, this command could result in minor data modifications or unintended side-effects. Generally recoverable."
+    else:
+        what_if = "This command appears strictly safe. Executing it will likely result in read-only operations or isolated, non-destructive outputs."
+
+    details = [
+        f"[dim]Target:[/dim] [bold white]{command}[/bold white]",
+        f"[dim]Risk:[/dim]   [{color}][bold]{level.value.upper()}[/bold][/{color}] (Confidence: {score:.2f})",
+        "",
+    ]
 
     if reasons:
-        console.print("\nMatched policies:")
-        for i, (r, p) in enumerate(zip(reasons, policies)):
-            console.print(f"  [{color}]{p}[/{color}]: {r}")
+        details.append(f"[bold {color}]VIOLATIONS DETECTED:[/bold {color}]")
+        for r, p in zip(reasons, policies):
+            details.append(f"  [{color}][>][/{color}] [bold]{p}[/bold]: {r}")
     else:
-        console.print("[green]✓ No risk patterns matched[/green]")
+        details.append("[green][+] No heuristic violations detected.[/green]")
+
+    details.append("")
+    details.append("[bold cyan]WHAT-IF SIMULATION:[/bold cyan]")
+    details.append(f"[italic]{what_if}[/italic]")
+
+    console.print(
+        Panel(
+            "\n".join(details),
+            border_style=color,
+            title=f"[{color}]Security Report[/{color}]",
+            padding=(1, 2),
+        )
+    )
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # serve command
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
-@app.command()
+@server_app.command(name="start")
 def serve(
     host: str = typer.Option("0.0.0.0", "--host"),  # nosec B104 — operator-overridable default
     port: int = typer.Option(8000, "--port"),
@@ -683,25 +840,30 @@ def serve(
     )
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # status command
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
-@app.command()
+@server_app.command(name="status")
 def status(
     api_url: str = typer.Option("http://localhost:8000", "--api"),
+    refresh_rate: float = typer.Option(1.0, "--refresh", help="Refresh rate in seconds"),
     api_key: str | None = API_KEY_OPTION,
 ) -> None:
-    """[bold]Show[/bold] a real-time summary of AgentWatch runtime status."""
+    """[bold]Show[/bold] a real-time live dashboard of AgentWatch runtime status."""
 
     async def _run() -> None:
         try:
             import httpx
+            from rich.align import Align
+            from rich.layout import Layout
+            from rich.live import Live
         except ImportError:
-            console.print("[red]httpx not installed. Run: pip install httpx[/red]")
+            console.print("[red]Missing dependencies. Run: pip install httpx rich[/red]")
             raise typer.Exit(1)
 
+        # Initial connection check
         async with httpx.AsyncClient() as client:
             try:
                 resp = await client.get(
@@ -716,29 +878,81 @@ def status(
                 console.print(f"[red]Failed to connect to API at {api_url}: {exc}[/red]")
                 raise typer.Exit(1)
 
-        data = resp.json()
+        def generate_dashboard(data, error_msg=None):
+            if error_msg:
+                return Panel(
+                    f"[red]{error_msg}[/red]", title="AgentWatch Error", border_style="red"
+                )
 
-        console.print("\n[bold cyan]AgentWatch Runtime Status[/bold cyan]")
-        console.print("────────────────────────────────\n")
+            # Create sub-panels
+            active = data.get("active_sessions", 0)
+            failed = data.get("failed_sessions", 0)
+            blocked = data.get("blocked_sessions", 0)
 
-        console.print("[bold]Agent Activity[/bold]")
-        console.print(f"  Active sessions:        {data.get('active_sessions', 0)}")
-        console.print(f"  Failed sessions:        {data.get('failed_sessions', 0)}")
-        console.print(f"  Safety-blocked sessions: {data.get('blocked_sessions', 0)}\n")
+            activity = Table.grid(padding=(0, 2))
+            activity.add_row("Active Sessions:", f"[green]{active}[/green]")
+            activity.add_row("Failed Sessions:", f"[red]{failed}[/red]")
+            activity.add_row("Blocked Sessions:", f"[yellow]{blocked}[/yellow]")
+            p1 = Panel(activity, title="[cyan]Agent Activity[/cyan]", border_style="cyan")
 
-        console.print("[bold]Resource Utilization[/bold]")
-        console.print(f"  Total tokens consumed:  {data.get('total_tokens', 0):,}")
-        console.print(f"  Estimated cost:         ${data.get('estimated_cost_usd', 0.0):.4f}\n")
+            tokens = data.get("total_tokens", 0)
+            cost = data.get("estimated_cost_usd", 0.0)
 
-        safety_stats = data.get("safety_stats", {})
-        eb_stats = data.get("event_bus_stats", {})
+            resources = Table.grid(padding=(0, 2))
+            resources.add_row("Total Tokens:", f"[bold]{tokens:,}[/bold]")
+            resources.add_row("Est. Cost:", f"[green]${cost:.4f}[/green]")
+            p2 = Panel(
+                resources, title="[magenta]Resource Utilization[/magenta]", border_style="magenta"
+            )
 
-        console.print("[bold]Safety & Event Pipeline[/bold]")
-        console.print(f"  Blocked operations:     {safety_stats.get('blocked', 0)}")
-        console.print(f"  Event throughput:       {eb_stats.get('total_published', 0):,} processed")
-        console.print(f"  Active subscribers:     {eb_stats.get('active_subscribers', 0)}\n")
+            safety_stats = data.get("safety_stats", {})
+            eb_stats = data.get("event_bus_stats", {})
 
-    asyncio.run(_run())
+            pipeline = Table.grid(padding=(0, 2))
+            pipeline.add_row("Blocked Ops:", f"[red]{safety_stats.get('blocked', 0)}[/red]")
+            pipeline.add_row("Event T-Put:", f"{eb_stats.get('total_published', 0):,} processed")
+            pipeline.add_row("Subscribers:", f"{eb_stats.get('active_subscribers', 0)}")
+            p3 = Panel(
+                pipeline, title="[yellow]Safety & Event Pipeline[/yellow]", border_style="yellow"
+            )
+
+            layout = Layout()
+            layout.split_column(
+                Layout(
+                    Panel(
+                        Align(
+                            "[bold cyan]AgentWatch Live Runtime Dashboard[/bold cyan]\n[dim]Press Ctrl+C to exit[/dim]",
+                            align="center",
+                        )
+                    ),
+                    size=4,
+                ),
+                Layout(name="body"),
+            )
+            layout["body"].split_row(Layout(p1), Layout(p2), Layout(p3))
+            return layout
+
+        async with httpx.AsyncClient() as client:
+            with Live(
+                generate_dashboard({}), refresh_per_second=1 / refresh_rate, console=console
+            ) as live:
+                while True:
+                    try:
+                        resp = await client.get(
+                            f"{api_url}/api/v1/dashboard/summary",
+                            headers=_api_headers(api_key),
+                            timeout=2.0,
+                        )
+                        resp.raise_for_status()
+                        live.update(generate_dashboard(resp.json()))
+                    except Exception as exc:
+                        live.update(generate_dashboard({}, str(exc)))
+                    await asyncio.sleep(refresh_rate)
+
+    try:
+        asyncio.run(_run())
+    except KeyboardInterrupt:
+        console.print("[dim]Exited status dashboard.[/dim]")
 
 
 # ─────────────────────────────────────────────
@@ -991,10 +1205,10 @@ def compare(
 
 # ─────────────────────────────────────────────
 # verify-env command
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
-@app.command(name="verify-env")
+@app.command(name="check-env")
 def verify_env() -> None:
     """[bold]Verify[/bold] local developer environment variables and dependencies."""
     from agentwatch.cli.verify_env import verify_environment
@@ -1051,27 +1265,27 @@ def redteam(
 
 # ─────────────────────────────────────────────
 # Print helpers
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
 def _print_live_event(event) -> None:
     from agentwatch.core.schema import EventType
 
     icon_map = {
-        EventType.TOOL_CALL: "🔧",
-        EventType.TOOL_RESULT: "✅",
-        EventType.TOOL_ERROR: "❌",
-        EventType.SAFETY_BLOCK: "🚫",
-        EventType.SAFETY_CHECK: "🛡",
-        EventType.PLANNER_OUTPUT: "🧠",
-        EventType.AGENT_START: "▶",
-        EventType.AGENT_END: "⏹",
-        EventType.SESSION_START: "🚀",
-        EventType.SESSION_END: "🏁",
-        EventType.CHECKPOINT_CREATE: "📍",
-        EventType.ROLLBACK_TRIGGER: "↩",
-        EventType.MEMORY_READ: "📖",
-        EventType.MEMORY_WRITE: "✏️",
+        EventType.TOOL_CALL: "[cyan][+][/cyan]",
+        EventType.TOOL_RESULT: "[green][=][/green]",
+        EventType.TOOL_ERROR: "[red][!][/red]",
+        EventType.SAFETY_BLOCK: "[bold red][x][/bold red]",
+        EventType.SAFETY_CHECK: "[yellow][*][/yellow]",
+        EventType.PLANNER_OUTPUT: "[magenta][~][/magenta]",
+        EventType.AGENT_START: "[green][>][/green]",
+        EventType.AGENT_END: "[dim][<][/dim]",
+        EventType.SESSION_START: "[bold cyan][^][/bold cyan]",
+        EventType.SESSION_END: "[bold cyan][$][/bold cyan]",
+        EventType.CHECKPOINT_CREATE: "[blue][@][/blue]",
+        EventType.ROLLBACK_TRIGGER: "[orange1][&][/orange1]",
+        EventType.MEMORY_READ: "[dim][r][/dim]",
+        EventType.MEMORY_WRITE: "[dim][w][/dim]",
     }
 
     icon = icon_map.get(event.event_type, "•")
@@ -1137,6 +1351,7 @@ def _print_replay_step(step, show_all: bool = False) -> None:
 
 
 def _print_session_summary(session, events) -> None:
+    from agentwatch.cli.animator import matrix_type_print
     from agentwatch.scoring.confidence import ConfidenceScorer
 
     scorer = ConfidenceScorer()
@@ -1151,9 +1366,10 @@ def _print_session_summary(session, events) -> None:
         else "red"
     )
 
+    matrix_type_print(f"SESSION COMPLETE: {session.session_id}", color="1;96m", delay=0.03)
+
     console.print(
         Panel(
-            f"[bold]Session Complete[/bold]\n"
             f"Status:     [{sc}]{session.status.value}[/{sc}]\n"
             f"Events:     {session.total_events}\n"
             f"Tokens:     {session.total_tokens:,}\n"
@@ -1171,30 +1387,41 @@ def _print_session_summary(session, events) -> None:
 
 
 def _print_sessions_table(sessions: list) -> None:
-    table = Table(title="Recent Sessions", box=box.ROUNDED)
-    table.add_column("ID", style="dim", width=16)
-    table.add_column("Agent")
-    table.add_column("Framework")
-    table.add_column("Status")
-    table.add_column("Events", justify="right")
-    table.add_column("Tokens", justify="right")
-    table.add_column("Started")
+    from rich import box
 
+    from agentwatch.cli.animator import animate_table_rows
+
+    table = Table(
+        title="[bold green]R E C E N T   S E S S I O N S[/bold green]",
+        box=box.DOUBLE_EDGE,
+        border_style="bold cyan",
+    )
+    table.add_column("ID", style="bold green", width=16)
+    table.add_column("Agent", style="bold cyan")
+    table.add_column("Framework", style="dim white")
+    table.add_column("Status")
+    table.add_column("Events", justify="right", style="cyan")
+    table.add_column("Tokens", justify="right", style="green")
+    table.add_column("Started", style="dim")
+
+    rows = []
     for s in sessions:
         sid = s["session_id"][:12] + "..."
         sc = _status_color(s.get("status", ""))
         started = s.get("started_at", "")[:16] if s.get("started_at") else "-"
-        table.add_row(
-            sid,
-            s.get("agent_name") or s.get("agent_id", "?")[:16],
-            s.get("framework", "-"),
-            f"[{sc}]{s.get('status', '-')}[/{sc}]",
-            str(s.get("total_events", 0)),
-            f"{s.get('total_tokens', 0):,}",
-            started,
+        rows.append(
+            [
+                sid,
+                s.get("agent_name") or s.get("agent_id", "?")[:16],
+                s.get("framework", "-"),
+                f"[{sc}]{s.get('status', '-')}[/{sc}]",
+                str(s.get("total_events", 0)),
+                f"{s.get('total_tokens', 0):,}",
+                started,
+            ]
         )
 
-    console.print(table)
+    animate_table_rows(table, rows, delay=0.08)
 
 
 # ─────────────────────────────────────────────
@@ -1318,7 +1545,7 @@ def session_prune(
 
 # ─────────────────────────────────────────────
 # Entrypoint
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 
 def main() -> None:
