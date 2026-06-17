@@ -9,6 +9,8 @@ Exposed tools:
     - memory_query(question)
     - session_replay(session_id, step?)
     - safety_status()
+    - list_sessions()
+    - cost_report(session_id)
 
 The implementation is transport-agnostic — it can be wired into the actual
 MCP stdio or HTTP transport at the API layer. Here we expose the tool

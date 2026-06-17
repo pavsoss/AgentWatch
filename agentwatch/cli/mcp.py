@@ -13,20 +13,21 @@ from agentwatch.protocol.mcp_server import AgentWatchMCPServer
 console = Console()
 app = typer.Typer(name="mcp", help="Run the AgentWatch MCP server over stdio.")
 
+
 @app.callback(invoke_without_command=True)
 def mcp_server() -> None:
     """Run the AgentWatch MCP server over stdio for agents (e.g. Claude Desktop)."""
     try:
-        from mcp.server.fastmcp import FastMCP
+        import mcp.server.fastmcp  # noqa: F401
     except ImportError:
         console.print("[red]mcp package not installed. Run: pip install mcp[/red]")
         raise typer.Exit(1)
 
-    from agentwatch.tracing.collector import TraceCollector
-    from agentwatch.replay.engine import ReplayEngine
     from agentwatch.core.safety import SafetyEngine
-    from agentwatch.scoring.confidence import ConfidenceScorer
     from agentwatch.cost.tracker import CostTracker
+    from agentwatch.replay.engine import ReplayEngine
+    from agentwatch.scoring.confidence import ConfidenceScorer
+    from agentwatch.tracing.collector import TraceCollector
 
     collector = TraceCollector()
     replay_engine = ReplayEngine()
@@ -54,7 +55,15 @@ def mcp_server() -> None:
         if not events or not trace:
             raise ValueError(f"Session {sid} not found")
         replay = replay_engine.load_from_events(trace.session, events)
-        return replay.to_dict()
+        payload = replay.to_dict()
+        if step is None:
+            return payload
+        steps = payload.get("steps", [])
+        if step < 0 or step >= len(steps):
+            raise ValueError(f"Step {step} out of range for session {sid}")
+        payload["steps"] = [steps[step]]
+        payload["selected_step"] = step
+        return payload
 
     def _safety() -> dict:
         return safety_engine.stats()
@@ -72,7 +81,17 @@ def mcp_server() -> None:
             for event in events:
                 cost_tracker.ingest_event(event)
             budget = cost_tracker.get_session(sid)
-        return budget.to_dict() if budget else {"session_id": sid, "tokens": 0, "cost_usd": 0.0}
+        if budget:
+            return budget.to_dict()
+        return {
+            "session_id": sid,
+            "token_budget": 0,
+            "usd_budget": 0.0,
+            "tokens_used": 0,
+            "usd_used": 0.0,
+            "exceeded": False,
+            "warnings": [],
+        }
 
     server.confidence_provider = _confidence
     server.memory_provider = _memory
@@ -82,4 +101,4 @@ def mcp_server() -> None:
     server.cost_provider = _cost
 
     fastmcp = server.build_fastmcp()
-    fastmcp.run(transport='stdio')
+    fastmcp.run(transport="stdio")
