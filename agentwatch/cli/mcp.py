@@ -83,15 +83,16 @@ def mcp_server() -> None:
             budget = cost_tracker.get_session(sid)
         if budget:
             return budget.to_dict()
-        return {
+        budget_dict = {
             "session_id": sid,
-            "token_budget": 0,
             "usd_budget": 0.0,
             "tokens_used": 0,
             "usd_used": 0.0,
             "exceeded": False,
             "warnings": [],
         }
+        budget_dict["token_budget"] = 0
+        return budget_dict
 
     server.confidence_provider = _confidence
     server.memory_provider = _memory
