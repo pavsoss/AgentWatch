@@ -31,6 +31,9 @@ app = typer.Typer(
 session_app = typer.Typer(name="session", help="Manage AgentWatch sessions.")
 app.add_typer(session_app)
 
+from agentwatch.cli.mcp import app as mcp_app
+app.add_typer(mcp_app, name="mcp")
+
 console = Console()
 
 
