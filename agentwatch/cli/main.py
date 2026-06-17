@@ -1141,7 +1141,10 @@ def session_rollback(
             console.print(f"\n[red]✗ Rollback failed: {result.error}[/red]")
             raise typer.Exit(1)
 
-    import asyncio
+    asyncio.run(_run())
+
+
+# ─────────────────────────────────────────────
 # session prune command
 # ─────────────────────────────────────────────
 
