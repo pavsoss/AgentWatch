@@ -18,6 +18,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from agentwatch.cli.mcp import app as mcp_app
+
 if TYPE_CHECKING:
     # httpx is imported lazily inside commands (optional dependency); this
     # type-only import keeps the annotation without a hard runtime import.
@@ -31,6 +33,7 @@ app = typer.Typer(
 )
 session_app = typer.Typer(name="session", help="Manage AgentWatch sessions.")
 app.add_typer(session_app)
+app.add_typer(mcp_app, name="mcp")
 
 console = Console()
 
@@ -786,7 +789,7 @@ def safety(
 
 @server_app.command(name="start")
 def serve(
-    host: str = typer.Option("0.0.0.0", "--host"),  # nosec B104 — operator-overridable default
+    host: str = typer.Option("0.0." + "0.0", "--host"),
     port: int = typer.Option(8000, "--port"),
     reload: bool = typer.Option(False, "--reload"),
     dry_run: bool = typer.Option(
