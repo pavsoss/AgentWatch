@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from agentwatch.core.event_bus import EventBus
+from agentwatch.orchestration.bft_consensus import BFTConsensusEngine
 from agentwatch.orchestration.consensus import AgentVote, detect_consensus
 from agentwatch.orchestration.crew_context import CrewContext
 from agentwatch.orchestration.dag import InterAgentDAG

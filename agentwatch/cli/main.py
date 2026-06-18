@@ -1546,8 +1546,8 @@ def session_prune(
     asyncio.run(_run())
 
 
-@session_app.command(name="replay")
-def replay(
+@session_app.command(name="replay-session")
+def replay_session(
     session_id: str = typer.Argument(..., help="ID of the session to replay"),
     step: int = typer.Option(0, help="Step to resume from"),
 ) -> None:
