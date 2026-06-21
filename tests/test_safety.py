@@ -292,6 +292,14 @@ def test_loop_detector_invalid_threshold_falls_back(monkeypatch):
     assert det3.min_reps == 3
 
 
+def test_loop_detector_invalid_explicit_threshold_raises():
+    with pytest.raises(ValueError, match="min_reps must be >= 1"):
+        LoopDetector(min_reps=0)
+    
+    with pytest.raises(ValueError, match="min_reps must be >= 1"):
+        LoopDetector(min_reps=-5)
+
+
 # ─────────────────────────────────────────────
 # SAF-008 — Exfiltration
 # ─────────────────────────────────────────────

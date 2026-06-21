@@ -50,6 +50,8 @@ class LoopDetector:
         self.window = window
         self.min_cycle = min_cycle
         self.min_reps = min_reps if min_reps is not None else _get_loop_threshold()
+        if self.min_reps < 1:
+            raise ValueError(f"min_reps must be >= 1, got {self.min_reps}")
         self._buffer: deque[str] = deque(maxlen=window)
 
     def signature_of(self, event: AgentEvent) -> str:
