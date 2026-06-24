@@ -37,21 +37,21 @@
       "contributions": 11
     },
     {
-      "login": "SakethSumanBathini",
-      "avatar_url": "https://github.com/SakethSumanBathini.png",
-      "html_url": "https://github.com/SakethSumanBathini",
-      "contributions": 7
-    },
-    {
       "login": "SHUBHAM2775",
       "avatar_url": "https://github.com/SHUBHAM2775.png",
       "html_url": "https://github.com/SHUBHAM2775",
       "contributions": 7
     },
     {
-      "login": "rishabhextra365-lang",
-      "avatar_url": "https://github.com/rishabhextra365-lang.png",
-      "html_url": "https://github.com/rishabhextra365-lang",
+      "login": "SakethSumanBathini",
+      "avatar_url": "https://github.com/SakethSumanBathini.png",
+      "html_url": "https://github.com/SakethSumanBathini",
+      "contributions": 7
+    },
+    {
+      "login": "MayurKharat0390",
+      "avatar_url": "https://github.com/MayurKharat0390.png",
+      "html_url": "https://github.com/MayurKharat0390",
       "contributions": 5
     },
     {
@@ -61,9 +61,9 @@
       "contributions": 5
     },
     {
-      "login": "MayurKharat0390",
-      "avatar_url": "https://github.com/MayurKharat0390.png",
-      "html_url": "https://github.com/MayurKharat0390",
+      "login": "rishabhextra365-lang",
+      "avatar_url": "https://github.com/rishabhextra365-lang.png",
+      "html_url": "https://github.com/rishabhextra365-lang",
       "contributions": 5
     },
     {
@@ -175,6 +175,6 @@
       "contributions": 1
     }
   ],
-  "updated_at": "2026-06-23T14:17:58Z",
+  "updated_at": "2026-06-24T03:40:35Z",
   "total": 29
 }
