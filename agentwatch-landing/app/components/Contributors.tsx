@@ -257,7 +257,7 @@ export default function Contributors() {
 
         {/* Grid */}
         <div className="contrib-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-          {contributors.slice(0, 9).map((c) => (
+          {contributors.map((c) => (
             <a
               key={c.login}
               href={c.html_url}
@@ -307,8 +307,8 @@ export default function Contributors() {
             </a>
           ))}
 
-          {/* "Growing" placeholder card — only one, subtle */}
-          {!loading && contributors.length < 9 && (
+          {/* "Growing" placeholder card — always at the end */}
+          {!loading && (
             <div className="contrib-card">
               <div
                 className="rounded-2xl p-5 h-full border border-dashed border-white/8 flex items-center gap-4"
