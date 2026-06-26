@@ -6,244 +6,78 @@ import ScrollTrigger from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-function CaptureIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="3" fill="#e8ff47" />
-      <path
-        d="M12 2v3M12 19v3M2 12h3M19 12h3"
-        stroke="#e8ff47"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"
-        stroke="#e8ff47"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function ScoreIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"
-        stroke="#e8ff47"
-        strokeWidth="2"
-      />
-      <path
-        d="M9 12l2 2 4-4"
-        stroke="#e8ff47"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function BlockIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z"
-        stroke="#e8ff47"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9 12h6M12 9v6"
-        stroke="#e8ff47"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-const callouts = [
-  {
-    Icon: CaptureIcon,
-    title: "Captures every reasoning step",
-    desc: "Every thought, tool call, and decision is intercepted before execution.",
-  },
-  {
-    Icon: ScoreIcon,
-    title: "Independent model scores it",
-    desc: "A second AI model evaluates the reasoning independently — no conflicts of interest.",
-  },
-  {
-    Icon: BlockIcon,
-    title: "Blocks dangerous actions before they run",
-    desc: "Pre-execution veto power. Not alerts. Not logs. A hard stop.",
-  },
-];
-
 export default function HowItWorks() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const line1Ref = useRef<SVGPathElement>(null);
-  const line2Ref = useRef<SVGPathElement>(null);
-  const diagramRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return;
-
     const ctx = gsap.context(() => {
-      gsap.from(".hiw-title", {
-        y: 40,
+      gsap.from(".step-item", {
+        x: -40,
         opacity: 0,
         duration: 0.8,
+        stagger: 0.2,
         ease: "power3.out",
         scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 80%",
-          once: true,
-        },
+          trigger: containerRef.current,
+          start: "top 70%",
+          once: true
+        }
       });
-
-      [line1Ref.current, line2Ref.current].forEach((line) => {
-        if (!line) return;
-        const length = line.getTotalLength?.() ?? 100;
-        gsap.set(line, {
-          strokeDasharray: length,
-          strokeDashoffset: length,
-        });
-        gsap.to(line, {
-          strokeDashoffset: 0,
-          duration: 1.2,
-          ease: "power2.inOut",
-          scrollTrigger: {
-            trigger: diagramRef.current,
-            start: "top 80%",
-            once: true,
-          },
-        });
-      });
-
-      gsap.from(".hiw-callout", {
-        y: 40,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.15,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".hiw-callouts",
-          start: "top 85%",
-          once: true,
-        },
-      });
-    }, sectionRef);
-
-    setTimeout(() => ScrollTrigger.refresh(), 100);
+    }, containerRef);
     return () => ctx.revert();
   }, []);
 
   return (
-    <section
-      id="how-it-works"
-      ref={sectionRef}
-      className="py-16 px-6"
-      style={{
-        background:
-          "radial-gradient(ellipse 65% 65% at 50% 50%, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.45) 55%, transparent 90%), linear-gradient(180deg, transparent 0%, rgba(232,255,71,0.02) 50%, transparent 100%)",
-      }}
-    >
-      <div className="max-w-5xl mx-auto">
-        <h2
-          className="hiw-title text-center font-bold mb-12"
-          style={{
-            fontFamily: "var(--font-syne)",
-            fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)",
-            textWrap: "balance",
-          }}
-        >
-          Pre-execution blocking is{" "}
-          <span className="gradient-text">the only way.</span>
+    <section id="workflows" ref={containerRef} className="relative z-10 py-32 px-6 max-w-7xl mx-auto border-t border-white/5">
+      <div className="flex flex-col items-center text-center mb-16">
+        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">
+          How it works.
         </h2>
+        <p className="text-[#888] font-mono text-xs uppercase tracking-[0.2em]">Intercept &gt; Analyze &gt; Control</p>
+      </div>
 
-        {/* Flow diagram */}
-        <div ref={diagramRef} className="flex flex-col items-center mb-14">
-          <div className="flex items-center gap-0 w-full max-w-2xl justify-center">
-            <div className="flex-shrink-0">
-              <div className="px-5 py-3 rounded-lg dark-glass text-sm text-[#a8a8a8]">
-                Your Agent
+      <div className="flex flex-col lg:flex-row gap-12 items-center">
+        {/* Steps */}
+        <div className="flex-1 space-y-12 w-full">
+          {[
+            { num: "01", title: "Intercept the LLM tool call", desc: "Before the agent runs any tool, the payload is intercepted by AgentWatch." },
+            { num: "02", title: "Analyze via Safety Engine", desc: "We run a secondary, specialized model to score the action's semantic risk." },
+            { num: "03", title: "Execute or Block", desc: "If safe, it executes. If dangerous, we block it and inject a simulated success back to the agent." }
+          ].map((step, i) => (
+            <div key={i} className="step-item flex gap-6 items-start">
+              <div className="text-3xl font-mono font-bold text-transparent bg-clip-text bg-gradient-to-b from-[#00f0ff] to-transparent">
+                {step.num}
               </div>
-            </div>
-
-            <div className="flex-1 flex items-center justify-center px-2 min-w-[40px]">
-              <svg viewBox="0 0 60 20" className="w-full max-w-[80px] h-5">
-                <path
-                  ref={line1Ref}
-                  d="M0 10 L50 10"
-                  stroke="#e8ff47"
-                  strokeWidth="1.5"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-                <polygon points="46,6 54,10 46,14" fill="#e8ff47" />
-              </svg>
-            </div>
-
-            <div className="flex-shrink-0">
-              <div
-                className="px-7 py-4 rounded-xl border-2 border-[#e8ff47] animate-pulse-glow relative"
-                style={{
-                  fontFamily: "var(--font-syne)",
-                  background: "rgba(10,10,10,0.92)",
-                  backdropFilter: "blur(14px)",
-                  WebkitBackdropFilter: "blur(14px)",
-                }}
-              >
-                <span className="text-base font-bold gradient-text">
-                  AgentWatch
-                </span>
-                <div className="absolute inset-0 rounded-xl opacity-20 bg-[#e8ff47] blur-lg pointer-events-none" />
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
+                <p className="text-[#888] text-sm">{step.desc}</p>
               </div>
-            </div>
-
-            <div className="flex-1 flex items-center justify-center px-2 min-w-[40px]">
-              <svg viewBox="0 0 60 20" className="w-full max-w-[80px] h-5">
-                <path
-                  ref={line2Ref}
-                  d="M0 10 L50 10"
-                  stroke="#e8ff47"
-                  strokeWidth="1.5"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-                <polygon points="46,6 54,10 46,14" fill="#e8ff47" />
-              </svg>
-            </div>
-
-            <div className="flex-shrink-0">
-              <div className="px-5 py-3 rounded-lg dark-glass text-sm text-[#a8a8a8]">
-                The World
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Callouts */}
-        <div className="hiw-callouts grid grid-cols-1 md:grid-cols-3 gap-6">
-          {callouts.map(({ Icon, title, desc }, i) => (
-            <div
-              key={i}
-              className="hiw-callout dark-glass flex flex-col gap-3 p-6 rounded-xl"
-            >
-              <Icon />
-              <h3
-                className="font-semibold text-[#e5e2e1]"
-                style={{ fontFamily: "var(--font-syne)" }}
-              >
-                {title}
-              </h3>
-              <p className="text-sm text-[#b0b0b0] leading-relaxed">{desc}</p>
             </div>
           ))}
+        </div>
+
+        {/* Visual Graphic */}
+        <div className="flex-1 w-full">
+          <div className="relative aspect-square md:aspect-video lg:aspect-square rounded-2xl border border-white/10 bg-[#0a0a0a] p-6 flex flex-col justify-center gap-4 shadow-[0_0_50px_rgba(0,240,255,0.05)] overflow-hidden">
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px] opacity-30" />
+            
+            <div className="step-item relative z-10 w-full rounded-xl border border-white/10 bg-black/60 backdrop-blur p-4 text-xs font-mono text-[#555]">
+              {"{"}
+              <br/>&nbsp;&nbsp;"tool": "execute_shell",
+              <br/>&nbsp;&nbsp;"args": "rm -rf /*"
+              <br/>{"}"}
+            </div>
+            
+            <div className="step-item relative z-10 mx-auto w-10 h-10 rounded-full border border-[#00f0ff]/30 flex items-center justify-center bg-[#00f0ff]/10">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="2" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m0-16l-4 4m4-4l4 4" />
+              </svg>
+            </div>
+
+            <div className="step-item relative z-10 w-full rounded-xl border border-red-500/30 bg-red-500/5 backdrop-blur p-4 text-xs font-mono text-red-400 text-center">
+              BLOCKED BY RULE: SYS_DESTRUCTIVE
+            </div>
+          </div>
         </div>
       </div>
     </section>
