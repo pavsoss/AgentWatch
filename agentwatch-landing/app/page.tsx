@@ -6,6 +6,7 @@ import HowItWorks from "./components/HowItWorks";
 import Features from "./components/Features";
 import Comparison from "./components/Comparison";
 import QuickStart from "./components/QuickStart";
+import AboutCreator from "./components/AboutCreator";
 import Contributors from "./components/Contributors";
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
       <Features />
       <Comparison />
       <QuickStart />
+      <AboutCreator />
       <Contributors />
     </main>
   );
