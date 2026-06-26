@@ -70,6 +70,7 @@ class TelemetryProvider:
     def __init__(self, config: TelemetryConfig | None = None):
         self._config = config or TelemetryConfig()
         self._tracer = None
+        self._tracer_provider: Any = None
         self._meter = None
         self._initialized = False
         self._buffer: list[Any] = []
@@ -146,6 +147,18 @@ class TelemetryProvider:
             self.export(span)
         self._buffer.clear()
 
+    def _flush_exported_spans(self, timeout_millis: int = 30000) -> bool:
+        """Force-flush queued spans and report whether the export completed."""
+        provider = self._tracer_provider
+        if provider is None or not hasattr(provider, "force_flush"):
+            return False
+
+        try:
+            return bool(provider.force_flush(timeout_millis))
+        except Exception as exc:
+            logger.warning("Telemetry span flush failed: %s", exc)
+            return False
+
     def grafana_dashboard_template(self) -> dict[str, Any]:
         """Return a basic Grafana dashboard template for AgentWatch."""
         return {
@@ -198,6 +211,8 @@ class TelemetryProvider:
             if not self._exporter:
                 self._exporter = console_exporter
             tracer_provider.add_span_processor(BatchSpanProcessor(console_exporter))
+
+        self._tracer_provider = tracer_provider
 
         try:
             trace.set_tracer_provider(tracer_provider)
@@ -417,7 +432,7 @@ class TelemetryProvider:
             span.end(end_time=end_time_ns)
             otel_contexts[aw_span_id] = set_span_in_context(span, Context())
 
-        return True
+        return self._flush_exported_spans()
 
 
 # Compatibility alias for OBS tests

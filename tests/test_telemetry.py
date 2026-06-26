@@ -318,3 +318,113 @@ def test_export_reasoning_trace_collector_success():
         assert trace.is_exported is True
     finally:
         agentwatch.telemetry.otel._provider = original
+
+
+def _single_span_trace_data():
+    return {
+        "trace_id": "123e4567-e89b-12d3-a456-426614174000",
+        "agent": {"framework": "langchain"},
+        "spans": [
+            {
+                "span_id": "123e4567-e89b-12d3-a456-426614174001",
+                "parent_span_id": None,
+                "name": "root_span",
+                "start_time": "2023-01-01T12:00:00Z",
+                "end_time": "2023-01-01T12:00:01Z",
+            }
+        ],
+    }
+
+
+@pytest.mark.skipif(not _OTEL_AVAILABLE, reason="requires opentelemetry-sdk")
+def test_export_reasoning_trace_returns_true_only_after_flush():
+    # A successful export must force-flush the span pipeline and report success.
+    provider = TelemetryProvider()
+    provider._initialized = True
+    provider._tracer = MagicMock()
+    provider._tracer_provider = MagicMock()
+    provider._tracer_provider.force_flush.return_value = True
+
+    assert provider.export_reasoning_trace(_single_span_trace_data()) is True
+    provider._tracer_provider.force_flush.assert_called_once()
+
+
+@pytest.mark.skipif(not _OTEL_AVAILABLE, reason="requires opentelemetry-sdk")
+def test_export_reasoning_trace_exporter_unavailable_returns_false():
+    # Without an active span pipeline the export cannot be confirmed, so the
+    # trace must not be reported as exported (keeps it eligible for retry).
+    provider = TelemetryProvider()
+    provider._initialized = True
+    provider._tracer = MagicMock()
+    provider._tracer_provider = None
+
+    assert provider.export_reasoning_trace(_single_span_trace_data()) is False
+
+
+@pytest.mark.skipif(not _OTEL_AVAILABLE, reason="requires opentelemetry-sdk")
+def test_export_reasoning_trace_failed_flush_returns_false():
+    # force_flush returning False means the backend never acknowledged the spans.
+    provider = TelemetryProvider()
+    provider._initialized = True
+    provider._tracer = MagicMock()
+    provider._tracer_provider = MagicMock()
+    provider._tracer_provider.force_flush.return_value = False
+
+    assert provider.export_reasoning_trace(_single_span_trace_data()) is False
+
+
+@pytest.mark.skipif(not _OTEL_AVAILABLE, reason="requires opentelemetry-sdk")
+def test_export_reasoning_trace_flush_exception_returns_false():
+    # An exporter that raises during flush must not be treated as a success.
+    provider = TelemetryProvider()
+    provider._initialized = True
+    provider._tracer = MagicMock()
+    provider._tracer_provider = MagicMock()
+    provider._tracer_provider.force_flush.side_effect = Exception("exporter down")
+
+    assert provider.export_reasoning_trace(_single_span_trace_data()) is False
+
+
+def test_collector_retries_export_after_failure():
+    # A failed export leaves is_exported False; the next terminal event retries
+    # and marks the trace exported once the export succeeds.
+    import asyncio
+
+    from agentwatch.core.schema import AgentEvent, EventType, ExecutionStatus
+    from agentwatch.telemetry.collector import TraceCollector
+
+    collector = TraceCollector()
+
+    import agentwatch.telemetry.otel
+
+    original = agentwatch.telemetry.otel._provider
+    mock_provider = MagicMock()
+    mock_provider.export_reasoning_trace.side_effect = [False, True]
+    agentwatch.telemetry.otel._provider = mock_provider
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        first = AgentEvent(
+            session_id="retry-session",
+            agent_id="agent-1",
+            event_type=EventType.SESSION_END,
+            status=ExecutionStatus.SUCCESS,
+            step_number=1,
+        )
+        loop.run_until_complete(collector.ingest(first))
+        trace = collector.get_trace("retry-session")
+        assert trace.is_exported is False
+
+        second = AgentEvent(
+            session_id="retry-session",
+            agent_id="agent-1",
+            event_type=EventType.SESSION_END,
+            status=ExecutionStatus.SUCCESS,
+            step_number=2,
+        )
+        loop.run_until_complete(collector.ingest(second))
+        assert trace.is_exported is True
+        assert mock_provider.export_reasoning_trace.call_count == 2
+    finally:
+        agentwatch.telemetry.otel._provider = original
