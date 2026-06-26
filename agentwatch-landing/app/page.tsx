@@ -49,29 +49,6 @@ export default function Home() {
       }} />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#00f0ff] rounded-full blur-[150px] opacity-[0.07] pointer-events-none z-0" />
 
-      {/* Nav */}
-      <nav className="relative z-50 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
-        <div className="flex items-center gap-3 stagger-in">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00f0ff] to-[#e8ff47] p-[1px]">
-            <div className="w-full h-full bg-[#050505] rounded-[7px] flex items-center justify-center">
-              <div className="w-3 h-3 bg-[#00f0ff] rounded-full shadow-[0_0_10px_#00f0ff]" />
-            </div>
-          </div>
-          <span className="font-bold text-xl tracking-tight">AgentWatch</span>
-        </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#888] stagger-in">
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#workflows" className="hover:text-white transition-colors">Workflows</a>
-          <a href="#docs" className="hover:text-white transition-colors">Documentation</a>
-        </div>
-        <div className="flex items-center gap-4 stagger-in">
-          <a href="https://discord.gg/yourdiscord" target="_blank" rel="noreferrer" className="text-sm font-medium hover:text-[#00f0ff] transition-colors">Discord</a>
-          <a href="https://github.com/sreerevanth/agentwatch" target="_blank" rel="noreferrer" className="text-sm font-medium hover:text-[#00f0ff] transition-colors">GitHub</a>
-          <button className="px-5 py-2 rounded-full bg-white text-black font-semibold text-sm hover:scale-105 transition-transform">
-            Get Started
-          </button>
-        </div>
-      </nav>
 
       {/* Hero Content */}
       <section className="relative z-10 pt-20 pb-32 px-6 flex flex-col items-center text-center">
