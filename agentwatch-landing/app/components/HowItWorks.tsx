@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import { TextPlugin } from "gsap/TextPlugin";
 import ScrollTrigger from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger, TextPlugin);
+}
 
 const CHAPTERS = [
   {
@@ -76,53 +79,99 @@ export default function HowItWorks() {
 
       if (activeChapter === 0) {
         // CHAPTER 1: The Rogue AI
-        tl.to(".c1-msg1", { opacity: 1, y: 0, duration: 0.4 })
-          .to(".c1-msg2", { opacity: 1, y: 0, duration: 0.4 }, "+=0.8")
-          .to(".c1-file", { opacity: 0, scale: 0.5, stagger: 0.1, duration: 0.2 }, "+=0.5")
-          .to(".c1-alert", { opacity: 1, scale: 1, duration: 0.5, ease: "elastic.out(1, 0.3)" }, "+=0.2");
+        tl.to(".c1-msg1", { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.5)" })
+          .to(".c1-typing", { opacity: 1, duration: 0.2 }, "+=0.3")
+          .to(".c1-typing", { opacity: 0, duration: 0.2, repeat: 3, yoyo: true })
+          .to(".c1-msg2", { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.5)" }, "+=0.2")
+          
+          // Files jitter then violently delete
+          .to(".c1-file", { x: "random(-5, 5)", y: "random(-5, 5)", duration: 0.05, repeat: 10, yoyo: true }, "+=0.4")
+          .to(".c1-file", { opacity: 0, scale: 0, rotation: "random(-45, 45)", stagger: 0.1, duration: 0.3, ease: "power4.in" })
+          
+          // Huge screen flash and stamp
+          .to(".c1-flash", { opacity: 1, duration: 0.1 })
+          .to(".c1-flash", { opacity: 0, duration: 0.5 })
+          .to(".c1-alert", { opacity: 1, scale: 1, rotation: -12, duration: 0.5, ease: "elastic.out(1, 0.3)" }, "-=0.5")
+          
+          // Camera shake effect on the whole player container
+          .to(playerRef.current, { x: -10, duration: 0.05, repeat: 5, yoyo: true }, "-=0.5");
           
         tl.to(".video-progress", { width: "100%", duration: tl.duration(), ease: "none" }, 0);
-        tl.to(".video-time", { innerHTML: "0:04", duration: tl.duration(), snap: { innerHTML: 1 }, ease: "none" }, 0);
+        tl.to(".video-time", { innerHTML: "0:05", duration: tl.duration(), snap: { innerHTML: 1 }, ease: "none" }, 0);
         
         tl.to([".c1-msg1", ".c1-msg2", ".c1-alert"], { opacity: 0, duration: 0.5 }, "+=2");
-        tl.to(".c1-file", { opacity: 1, scale: 1, duration: 0 }, "<");
+        tl.to(".c1-file", { opacity: 1, scale: 1, rotation: 0, x: 0, y: 0, duration: 0 }, "<");
       } 
       else if (activeChapter === 1) {
         // CHAPTER 2: The Interceptor
         tl.to(".seq-1", { opacity: 1, duration: 0.2 })
-          .to(".seq-2", { opacity: 1, duration: 0.4 }, "+=0.6")
-          .to(".seq-3", { opacity: 1, y: -5, duration: 0.3, ease: "back.out(1.5)" }, "+=0.5")
-          .to(".seq-4", { opacity: 1, duration: 0.3 }, "+=0.8")
-          .to(".seq-5", { opacity: 1, scale: 1.05, duration: 0.3, ease: "back.out(2)" }, "+=0.4")
-          .to(".seq-5", { scale: 1, duration: 0.2 });
-
-        tl.to(".video-progress", { width: "100%", duration: tl.duration(), ease: "none" }, 0);
-        tl.to(".video-time", { innerHTML: "0:05", duration: tl.duration(), snap: { innerHTML: 1 }, ease: "none" }, 0);
-
-        tl.to([".seq-1", ".seq-2", ".seq-3", ".seq-4", ".seq-5"], { opacity: 0, duration: 0.5 }, "+=2");
-      }
-      else if (activeChapter === 2) {
-        // CHAPTER 3: DAG Tracing
-        tl.to(".dag-n1", { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" })
-          .to(".dag-l1", { width: "40px", duration: 0.3 })
-          .to(".dag-n2", { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" })
-          .to(".dag-l2", { width: "40px", duration: 0.3 })
-          .to(".dag-n3", { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" })
-          .to(".dag-n3", { backgroundColor: "rgba(239, 68, 68, 0.2)", borderColor: "rgba(239, 68, 68, 1)", duration: 0.2 }, "+=0.4")
-          .to(".dag-error", { opacity: 1, duration: 0.3 }, "<")
-          .to(".dag-n3", { opacity: 0.3, scale: 0.8, duration: 0.5 }, "+=0.8")
-          .to(".dag-error", { opacity: 0, duration: 0.2 }, "<")
-          .to(".dag-l2", { width: "0px", duration: 0.3 }, "<")
-          .to(".dag-n2", { boxShadow: "0 0 20px rgba(0, 240, 255, 0.8)", duration: 0.3 })
-          .to(".dag-revert", { opacity: 1, duration: 0.3 });
+          .to(".seq-2-text", { text: "[Agent] Planning steps...<br/>[Agent] Attempting to execute: <span class='text-red-400'>rm -rf /var/www/*</span>", duration: 1.5, ease: "none" }, "+=0.2")
+          
+          // Intercept block pops up
+          .to(".seq-3", { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, "+=0.4")
+          
+          // Scanning beam runs across the block
+          .to(".scan-beam", { top: "100%", duration: 0.8, ease: "power1.inOut" }, "-=0.2")
+          
+          .to(".seq-4-text", { text: "[Auditor] Semantic Risk Score: 98/100<br/>[Auditor] Verdict: <span class='text-red-500 font-bold'>DESTRUCTIVE_ACTION</span>", duration: 1, ease: "none" }, "+=0.2")
+          
+          // Violent stamp for blocked
+          .to(".seq-5", { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(3)" }, "+=0.4")
+          .to(playerRef.current, { y: 5, duration: 0.05, repeat: 3, yoyo: true }, "-=0.3")
+          .to(".seq-5", { boxShadow: "0 0 40px rgba(239,68,68,0.6)", duration: 0.2, yoyo: true, repeat: 1 });
 
         tl.to(".video-progress", { width: "100%", duration: tl.duration(), ease: "none" }, 0);
         tl.to(".video-time", { innerHTML: "0:06", duration: tl.duration(), snap: { innerHTML: 1 }, ease: "none" }, 0);
 
+        tl.to([".seq-1", ".seq-3", ".seq-5"], { opacity: 0, scale: 0.9, duration: 0.5 }, "+=2");
+        tl.to([".seq-2-text", ".seq-4-text"], { text: "", duration: 0 }, "<");
+        tl.to(".scan-beam", { top: "0%", duration: 0 }, "<");
+      }
+      else if (activeChapter === 2) {
+        // CHAPTER 3: DAG Tracing
+        
+        // Node 1 appears and pulses
+        tl.to(".dag-n1", { opacity: 1, scale: 1, duration: 0.4, ease: "elastic.out(1, 0.5)" })
+          .to(".dag-n1", { boxShadow: "0 0 30px rgba(0, 240, 255, 0.6)", duration: 0.2, yoyo: true, repeat: 1 })
+          
+          // Line 1 draws
+          .to(".dag-l1", { width: "60px", duration: 0.4, ease: "power2.inOut" })
+          .to(".dag-p1", { left: "100%", opacity: 1, duration: 0.4, ease: "none" }, "-=0.4")
+          
+          // Node 2 appears
+          .to(".dag-n2", { opacity: 1, scale: 1, duration: 0.4, ease: "elastic.out(1, 0.5)" })
+          
+          // Line 2 draws
+          .to(".dag-l2", { width: "60px", duration: 0.4, ease: "power2.inOut" })
+          .to(".dag-p2", { left: "100%", opacity: 1, duration: 0.4, ease: "none" }, "-=0.4")
+          
+          // Node 3 appears and immediately faults
+          .to(".dag-n3", { opacity: 1, scale: 1, duration: 0.4, ease: "elastic.out(1, 0.5)" })
+          .to(".dag-n3", { backgroundColor: "rgba(239, 68, 68, 0.2)", borderColor: "rgba(239, 68, 68, 1)", duration: 0.2 }, "+=0.2")
+          .to(".dag-n3", { x: "random(-4, 4)", duration: 0.05, repeat: 6, yoyo: true }, "<")
+          .to(".dag-error", { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, "<")
+          
+          // Rewind effect starts
+          .to(".dag-n3", { opacity: 0.2, scale: 0.8, duration: 0.5 }, "+=0.8")
+          .to(".dag-error", { opacity: 0, scale: 0.5, duration: 0.2 }, "<")
+          
+          // Particles flow backwards
+          .to(".dag-p2", { left: "0%", duration: 0.4, ease: "none" }, "<")
+          .to(".dag-l2", { width: "0px", duration: 0.4, ease: "power2.inOut" }, "<")
+          
+          // Node 2 becomes Rollback Target
+          .to(".dag-n2", { boxShadow: "0 0 30px rgba(232, 255, 71, 0.8)", borderColor: "#e8ff47", duration: 0.3 })
+          .to(".dag-revert", { opacity: 1, y: 0, duration: 0.3, ease: "back.out(2)" });
+
+        tl.to(".video-progress", { width: "100%", duration: tl.duration(), ease: "none" }, 0);
+        tl.to(".video-time", { innerHTML: "0:07", duration: tl.duration(), snap: { innerHTML: 1 }, ease: "none" }, 0);
+
         tl.to([".dag-n1", ".dag-n2", ".dag-n3", ".dag-revert"], { opacity: 0, scale: 0, duration: 0.5 }, "+=2");
         tl.to(".dag-l1", { width: "0px", duration: 0 }, "<");
-        tl.to(".dag-n2", { boxShadow: "none", duration: 0 }, "<");
-        tl.to(".dag-n3", { backgroundColor: "rgba(0, 240, 255, 0.1)", borderColor: "rgba(0, 240, 255, 0.3)", duration: 0 }, "<");
+        tl.to([".dag-p1", ".dag-p2"], { left: "0%", opacity: 0, duration: 0 }, "<");
+        tl.to(".dag-n2", { boxShadow: "none", borderColor: "rgba(0, 240, 255, 0.3)", duration: 0 }, "<");
+        tl.to(".dag-n3", { backgroundColor: "rgba(0, 240, 255, 0.1)", borderColor: "rgba(0, 240, 255, 0.3)", x: 0, duration: 0 }, "<");
+        tl.to(".dag-revert", { y: 10, duration: 0 }, "<");
       }
 
       // Common reset
@@ -151,7 +200,7 @@ export default function HowItWorks() {
       <div className="flex flex-col lg:flex-row gap-8 items-stretch">
         
         {/* PLAYLIST (Left Side) */}
-        <div className="lg:w-1/3 flex flex-col gap-4">
+        <div className="lg:w-1/3 flex flex-col gap-4 relative z-20">
           {CHAPTERS.map((chap, idx) => {
             const isActive = activeChapter === idx;
             return (
@@ -160,7 +209,7 @@ export default function HowItWorks() {
                 onClick={() => setActiveChapter(idx)}
                 className={`playlist-item text-left p-6 rounded-2xl border transition-all duration-300 relative overflow-hidden group ${
                   isActive 
-                    ? "bg-[#0a0a0a] border-[#e8ff47] shadow-[0_0_20px_rgba(232,255,71,0.15)]" 
+                    ? "bg-[#0a0a0a] border-[#e8ff47] shadow-[0_0_20px_rgba(232,255,71,0.15)] scale-[1.02]" 
                     : "bg-[#050505] border-white/5 hover:border-white/20 hover:bg-[#0a0a0a]"
                 }`}
               >
@@ -185,33 +234,41 @@ export default function HowItWorks() {
         <div className="lg:w-2/3">
           <div 
             ref={playerRef} 
-            className="relative w-full h-full min-h-[400px] md:min-h-[500px] rounded-3xl border border-white/10 bg-[#0a0a0a] overflow-hidden shadow-2xl group flex flex-col"
+            className="relative w-full h-full min-h-[400px] md:min-h-[500px] rounded-3xl border border-white/10 bg-[#0a0a0a] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] group flex flex-col"
           >
             {/* Background Grid */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(232,255,71,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(232,255,71,0.02)_1px,transparent_1px)] bg-[size:32px_32px]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#0a0a0a_100%)]" />
 
             {/* Video Content Canvas */}
-            <div className="absolute inset-0 p-8 flex items-center justify-center">
+            <div className="absolute inset-0 p-8 flex items-center justify-center overflow-hidden">
               
               {/* CHAPTER 1 CONTENT: Rogue AI */}
               {activeChapter === 0 && (
-                <div className="w-full max-w-sm relative">
+                <div className="w-full max-w-sm relative z-10">
+                  <div className="c1-flash absolute -inset-[1000px] bg-red-500 opacity-0 pointer-events-none mix-blend-screen" />
+                  
                   <div className="c1-msg1 opacity-0 translate-y-4 bg-white/10 text-white p-3 rounded-2xl rounded-tr-none self-end ml-auto mb-4 w-3/4 text-sm backdrop-blur">
                     Clean up my temp files.
+                  </div>
+                  <div className="c1-typing opacity-0 flex gap-1 bg-transparent p-2 rounded ml-auto w-3/4 justify-end mb-2">
+                    <div className="w-2 h-2 bg-white/50 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-white/50 rounded-full animate-bounce delay-75" />
+                    <div className="w-2 h-2 bg-white/50 rounded-full animate-bounce delay-150" />
                   </div>
                   <div className="c1-msg2 opacity-0 translate-y-4 bg-[#e8ff47]/20 text-[#e8ff47] border border-[#e8ff47]/30 p-3 rounded-2xl rounded-tl-none w-3/4 text-sm font-mono mb-6 backdrop-blur">
                     Sure! Executing: rm -rf /*
                   </div>
-                  <div className="flex gap-4 justify-center">
+                  <div className="flex gap-4 justify-center relative">
                     {[1,2,3].map(i => (
-                      <div key={i} className="c1-file w-12 h-16 bg-[#222] rounded flex items-center justify-center border border-white/10">
-                        <div className="w-6 h-1 bg-[#444]" />
+                      <div key={i} className="c1-file w-12 h-16 bg-[#222] rounded flex items-center justify-center border border-white/10 relative overflow-hidden">
+                        <div className="w-6 h-1 bg-[#444] rounded" />
+                        <div className="absolute top-2 left-2 w-3 h-1 bg-[#555] rounded" />
                       </div>
                     ))}
                   </div>
-                  <div className="c1-alert opacity-0 absolute inset-0 flex items-center justify-center scale-50">
-                    <div className="bg-red-500/20 backdrop-blur-md border-2 border-red-500 text-red-500 font-black text-4xl p-6 rounded-2xl uppercase tracking-widest shadow-[0_0_50px_rgba(239,68,68,0.5)] transform -rotate-12">
+                  <div className="c1-alert opacity-0 absolute inset-0 flex items-center justify-center scale-50 pointer-events-none">
+                    <div className="bg-red-500/20 backdrop-blur-xl border-2 border-red-500 text-red-500 font-black text-4xl p-6 rounded-2xl uppercase tracking-widest shadow-[0_0_100px_rgba(239,68,68,0.8)]">
                       SYSTEM PURGED
                     </div>
                   </div>
@@ -220,33 +277,26 @@ export default function HowItWorks() {
 
               {/* CHAPTER 2 CONTENT: The Interceptor */}
               {activeChapter === 1 && (
-                <div className="w-full flex flex-col font-mono text-sm max-w-md mx-auto">
+                <div className="w-full flex flex-col font-mono text-sm max-w-md mx-auto relative z-10">
                   <div className="flex items-center gap-2 mb-6 border-b border-white/10 pb-4">
-                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-red-500/80 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/80 shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/80 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
                     <span className="ml-2 text-[#555] text-xs font-semibold">agent-terminal</span>
                   </div>
                   <div className="space-y-4 text-left">
                     <div className="seq-1 opacity-0 text-[#a8a8a8]">
                       <span className="text-[#00f0ff]">$</span> agent run task --id 8492
                     </div>
-                    <div className="seq-2 opacity-0 text-[#e5e2e1]">
-                      [Agent] Planning steps...
-                      <br/>
-                      [Agent] Attempting to execute: <span className="text-red-400">rm -rf /var/www/*</span>
-                    </div>
-                    <div className="seq-3 opacity-0 mt-4 rounded border border-[#e8ff47]/50 bg-[#e8ff47]/10 p-4 text-[#e8ff47]">
+                    <div className="seq-2-text text-[#e5e2e1] min-h-[40px]"></div>
+                    <div className="seq-3 opacity-0 scale-95 mt-4 rounded border border-[#e8ff47]/50 bg-[#e8ff47]/10 p-4 text-[#e8ff47] relative overflow-hidden">
+                      <div className="scan-beam absolute top-0 left-0 w-full h-[2px] bg-[#e8ff47] shadow-[0_0_15px_rgba(232,255,71,1)] z-10" />
                       ⚠️ AGENTWATCH INTERCEPT ⚠️
                       <br/>
                       <span className="text-[#a8a8a8]">Holding execution for reasoning audit...</span>
                     </div>
-                    <div className="seq-4 opacity-0 text-[#00f0ff]">
-                      [Auditor] Semantic Risk Score: 98/100
-                      <br/>
-                      [Auditor] Verdict: <span className="text-red-500 font-bold">DESTRUCTIVE_ACTION</span>
-                    </div>
-                    <div className="seq-5 opacity-0 p-3 bg-red-500/20 border border-red-500/50 text-red-500 font-bold text-center uppercase tracking-widest shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                    <div className="seq-4-text text-[#00f0ff] min-h-[40px]"></div>
+                    <div className="seq-5 opacity-0 scale-110 p-3 bg-red-500/20 border border-red-500/50 text-red-500 font-bold text-center uppercase tracking-widest shadow-[0_0_20px_rgba(239,68,68,0.2)]">
                       Action Blocked Pre-Execution
                     </div>
                   </div>
@@ -255,22 +305,30 @@ export default function HowItWorks() {
 
               {/* CHAPTER 3 CONTENT: DAG Tracing */}
               {activeChapter === 2 && (
-                <div className="w-full flex flex-col items-center justify-center font-mono">
+                <div className="w-full flex flex-col items-center justify-center font-mono relative z-10">
                   <div className="flex items-center">
-                    <div className="dag-n1 opacity-0 scale-0 w-16 h-16 rounded-full border-2 border-[#00f0ff]/30 bg-[#00f0ff]/10 flex items-center justify-center text-[#00f0ff] font-bold shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+                    <div className="dag-n1 opacity-0 scale-0 w-16 h-16 rounded-full border-2 border-[#00f0ff]/30 bg-[#00f0ff]/10 flex items-center justify-center text-[#00f0ff] font-bold relative z-10">
                       S1
                     </div>
-                    <div className="dag-l1 w-0 h-1 bg-[#00f0ff]/50" />
-                    <div className="dag-n2 opacity-0 scale-0 w-16 h-16 rounded-full border-2 border-[#00f0ff]/30 bg-[#00f0ff]/10 flex items-center justify-center text-[#00f0ff] font-bold shadow-[0_0_15px_rgba(0,240,255,0.2)] relative">
+                    <div className="relative h-1 flex items-center">
+                      <div className="dag-l1 w-0 h-[2px] bg-[#00f0ff]/50 relative overflow-hidden" />
+                      <div className="dag-p1 opacity-0 absolute top-1/2 -translate-y-1/2 left-0 w-2 h-2 bg-[#00f0ff] rounded-full shadow-[0_0_10px_#00f0ff]" />
+                    </div>
+                    
+                    <div className="dag-n2 opacity-0 scale-0 w-16 h-16 rounded-full border-2 border-[#00f0ff]/30 bg-[#00f0ff]/10 flex items-center justify-center text-[#00f0ff] font-bold relative z-10">
                       S2
-                      <div className="dag-revert opacity-0 absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[#e8ff47] text-xs font-bold bg-[#e8ff47]/20 px-2 py-1 rounded">
+                      <div className="dag-revert opacity-0 translate-y-4 absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap text-[#111] text-xs font-bold bg-[#e8ff47] px-3 py-1 rounded shadow-[0_0_20px_rgba(232,255,71,0.5)]">
                         ROLLBACK TARGET
                       </div>
                     </div>
-                    <div className="dag-l2 w-0 h-1 bg-[#00f0ff]/50" />
-                    <div className="dag-n3 opacity-0 scale-0 w-16 h-16 rounded-full border-2 border-[#00f0ff]/30 bg-[#00f0ff]/10 flex items-center justify-center text-[#00f0ff] font-bold shadow-[0_0_15px_rgba(0,240,255,0.2)] relative">
+                    <div className="relative h-1 flex items-center">
+                      <div className="dag-l2 w-0 h-[2px] bg-[#00f0ff]/50 relative overflow-hidden" />
+                      <div className="dag-p2 opacity-0 absolute top-1/2 -translate-y-1/2 left-0 w-2 h-2 bg-[#00f0ff] rounded-full shadow-[0_0_10px_#00f0ff]" />
+                    </div>
+
+                    <div className="dag-n3 opacity-0 scale-0 w-16 h-16 rounded-full border-2 border-[#00f0ff]/30 bg-[#00f0ff]/10 flex items-center justify-center text-[#00f0ff] font-bold relative z-10">
                       S3
-                      <div className="dag-error opacity-0 absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap text-red-500 text-xs font-bold bg-red-500/20 border border-red-500/50 px-2 py-1 rounded">
+                      <div className="dag-error opacity-0 scale-50 absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap text-red-500 text-xs font-bold bg-red-500/20 border border-red-500/50 px-3 py-1 rounded shadow-[0_0_15px_rgba(239,68,68,0.3)]">
                         HALT_ERROR
                       </div>
                     </div>
@@ -281,35 +339,35 @@ export default function HowItWorks() {
             </div>
 
             {/* Video Controls Overlay */}
-            <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+            <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-30">
               {/* Progress Bar */}
               <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden cursor-pointer group/progress relative">
-                <div className="absolute inset-y-0 left-0 bg-white/10 w-full opacity-0 group-hover/progress:opacity-100" />
+                <div className="absolute inset-y-0 left-0 bg-white/10 w-full opacity-0 group-hover/progress:opacity-100 transition-opacity" />
                 <div className="video-progress h-full bg-[#e8ff47] w-0 relative">
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover/progress:opacity-100 translate-x-1/2" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)] opacity-0 group-hover/progress:opacity-100 translate-x-1/2 transition-opacity" />
                 </div>
               </div>
               <div className="flex justify-between items-center text-[#a8a8a8] text-sm font-mono">
                 <div className="flex items-center gap-4">
-                  <svg className="w-6 h-6 text-white cursor-pointer hover:text-[#e8ff47] transition-colors" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="w-6 h-6 text-white cursor-pointer hover:text-[#e8ff47] transition-colors hover:scale-110 transform" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                   <div className="flex items-center gap-1">
-                    <span className="video-time text-white">0:00</span>
-                    <span className="opacity-50">/ 0:{activeChapter === 0 ? "04" : activeChapter === 1 ? "05" : "06"}</span>
+                    <span className="video-time text-white font-bold">0:00</span>
+                    <span className="opacity-50">/ 0:{activeChapter === 0 ? "05" : activeChapter === 1 ? "06" : "07"}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <svg className="w-5 h-5 hover:text-white cursor-pointer transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  <svg className="w-5 h-5 hover:text-white cursor-pointer transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                  <svg className="w-5 h-5 hover:text-[#00f0ff] cursor-pointer transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  <svg className="w-5 h-5 hover:text-[#00f0ff] cursor-pointer transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
                 </div>
               </div>
             </div>
 
             {/* Play Button Overlay (fades out when "playing") */}
-            <div className="play-overlay absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-20 pointer-events-none">
-              <div className="w-20 h-20 rounded-full bg-[#e8ff47] flex items-center justify-center shadow-[0_0_40px_rgba(232,255,71,0.5)] transform hover:scale-110 transition-transform">
-                <svg className="w-10 h-10 text-black ml-1" viewBox="0 0 24 24" fill="currentColor">
+            <div className="play-overlay absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-md z-40 pointer-events-none">
+              <div className="w-24 h-24 rounded-full bg-[#e8ff47] flex items-center justify-center shadow-[0_0_60px_rgba(232,255,71,0.6)] transform hover:scale-110 transition-transform">
+                <svg className="w-12 h-12 text-black ml-1" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </div>
