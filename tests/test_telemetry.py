@@ -4,12 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from agentwatch.telemetry.otel import TelemetryConfig, TelemetryProvider
-
-
 import pytest
 
-from agentwatch.telemetry.otel import TelemetryConfig, TelemetryProvider, _OTEL_AVAILABLE
+from agentwatch.telemetry.otel import _OTEL_AVAILABLE, TelemetryConfig, TelemetryProvider
 
 
 def test_telemetry_config_backward_compatibility():
@@ -254,9 +251,10 @@ def test_export_reasoning_trace_otel_unavailable():
 
 
 def test_export_reasoning_trace_collector_isolation():
-    from agentwatch.telemetry.collector import TraceCollector
-    from agentwatch.core.schema import AgentEvent, EventType, ExecutionStatus
     import asyncio
+
+    from agentwatch.core.schema import AgentEvent, EventType, ExecutionStatus
+    from agentwatch.telemetry.collector import TraceCollector
     
     collector = TraceCollector()
     
@@ -288,9 +286,10 @@ def test_export_reasoning_trace_collector_isolation():
 
 
 def test_export_reasoning_trace_collector_success():
-    from agentwatch.telemetry.collector import TraceCollector
-    from agentwatch.core.schema import AgentEvent, EventType, ExecutionStatus
     import asyncio
+
+    from agentwatch.core.schema import AgentEvent, EventType, ExecutionStatus
+    from agentwatch.telemetry.collector import TraceCollector
     
     collector = TraceCollector()
     
@@ -342,6 +341,7 @@ def test_export_reasoning_trace_returns_true_only_after_flush():
     provider = TelemetryProvider()
     provider._initialized = True
     provider._tracer = MagicMock()
+    provider._exporter = MagicMock()
     provider._tracer_provider = MagicMock()
     provider._tracer_provider.force_flush.return_value = True
 
@@ -356,6 +356,7 @@ def test_export_reasoning_trace_exporter_unavailable_returns_false():
     provider = TelemetryProvider()
     provider._initialized = True
     provider._tracer = MagicMock()
+    provider._exporter = MagicMock()
     provider._tracer_provider = None
 
     assert provider.export_reasoning_trace(_single_span_trace_data()) is False
@@ -367,6 +368,7 @@ def test_export_reasoning_trace_failed_flush_returns_false():
     provider = TelemetryProvider()
     provider._initialized = True
     provider._tracer = MagicMock()
+    provider._exporter = MagicMock()
     provider._tracer_provider = MagicMock()
     provider._tracer_provider.force_flush.return_value = False
 
@@ -379,6 +381,7 @@ def test_export_reasoning_trace_flush_exception_returns_false():
     provider = TelemetryProvider()
     provider._initialized = True
     provider._tracer = MagicMock()
+    provider._exporter = MagicMock()
     provider._tracer_provider = MagicMock()
     provider._tracer_provider.force_flush.side_effect = Exception("exporter down")
 
@@ -428,3 +431,51 @@ def test_collector_retries_export_after_failure():
         assert mock_provider.export_reasoning_trace.call_count == 2
     finally:
         agentwatch.telemetry.otel._provider = original
+
+
+@pytest.mark.skipif(not _OTEL_AVAILABLE, reason="requires opentelemetry-sdk")
+def test_export_reasoning_trace_no_exporter_returns_false():
+    # force_flush can succeed even with no exporter configured; that is not a
+    # real export, so success must not be reported.
+    provider = TelemetryProvider()
+    provider._initialized = True
+    provider._tracer = MagicMock()
+    provider._exporter = None
+    provider._tracer_provider = MagicMock()
+    provider._tracer_provider.force_flush.return_value = True
+
+    assert provider.export_reasoning_trace(_single_span_trace_data()) is False
+
+
+@pytest.mark.skipif(not _OTEL_AVAILABLE, reason="requires opentelemetry-sdk")
+def test_export_reasoning_trace_is_idempotent_across_retries():
+    # A retry after a failed flush must not re-emit spans or re-record token
+    # metrics; it only re-attempts delivery of the already-queued spans.
+    provider = TelemetryProvider()
+    provider._initialized = True
+    provider._tracer = MagicMock()
+    provider._token_counter = MagicMock()
+    provider._exporter = MagicMock()
+    provider._tracer_provider = MagicMock()
+    provider._tracer_provider.force_flush.side_effect = [False, True]
+
+    trace_data = {
+        "trace_id": "123e4567-e89b-12d3-a456-426614174000",
+        "agent": {"framework": "langchain"},
+        "spans": [
+            {
+                "span_id": "123e4567-e89b-12d3-a456-426614174001",
+                "name": "root_span",
+                "start_time": "2023-01-01T12:00:00Z",
+                "end_time": "2023-01-01T12:00:01Z",
+                "token_count": 100,
+            }
+        ],
+    }
+
+    assert provider.export_reasoning_trace(trace_data) is False
+    assert provider.export_reasoning_trace(trace_data) is True
+
+    assert provider._tracer.start_span.call_count == 1
+    assert provider._token_counter.add.call_count == 1
+    assert provider._tracer_provider.force_flush.call_count == 2
