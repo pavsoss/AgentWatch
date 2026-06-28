@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 interface Contributor {
   login: string;
@@ -37,7 +38,7 @@ export default function Contributors() {
             className="group relative"
           >
             <div className="w-14 h-14 rounded-full border border-white/10 bg-[#0a0a0a] overflow-hidden hover:border-[#00f0ff] transition-colors relative z-10">
-              <img src={c.avatar_url} alt={c.login} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+              <Image src={c.avatar_url} alt="" width={56} height={56} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
             </div>
             {/* Tooltip */}
             <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black border border-white/10 text-xs text-white px-2 py-1 rounded whitespace-nowrap z-20 font-mono pointer-events-none">

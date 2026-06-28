@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 
@@ -109,7 +110,7 @@ export default function ContributorsClient({ contributors }: { contributors: Con
                     {/* Avatar Area */}
                     <div className="relative shrink-0">
                       <div className={`relative ${i === 0 ? "w-32 h-32 sm:w-48 sm:h-48" : "w-24 h-24 sm:w-32 sm:h-32"} rounded-full border-4 border-[#050505] z-10 overflow-hidden`}>
-                        <img src={c.avatarUrl} alt={c.username} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        <Image src={c.avatarUrl} alt="" width={200} height={200} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                       </div>
                       {/* Ring glow */}
                       <div className="absolute inset-[-10px] rounded-full border border-[#00f0ff]/50 animate-[spin_10s_linear_infinite]" style={{ borderStyle: "dashed" }} />
@@ -167,7 +168,7 @@ export default function ContributorsClient({ contributors }: { contributors: Con
 
             <div className="flex flex-col gap-3">
               {/* Table Header */}
-              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 text-xs font-mono font-bold text-[#555] uppercase tracking-widest border-b border-white/5">
+              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 text-xs font-mono font-bold text-[#888] uppercase tracking-widest border-b border-white/5">
                 <div className="col-span-1">Rank</div>
                 <div className="col-span-6">Operator</div>
                 <div className="col-span-4 text-center">Pull Requests</div>
@@ -187,7 +188,7 @@ export default function ContributorsClient({ contributors }: { contributors: Con
                   </div>
                   
                   <div className="col-span-1 md:col-span-6 flex items-center gap-4">
-                    <img src={c.avatarUrl} alt={c.username} className="w-12 h-12 rounded-full border border-white/10 group-hover:border-[#00f0ff] transition-colors" />
+                    <Image src={c.avatarUrl} alt="" width={48} height={48} className="w-12 h-12 rounded-full border border-white/10 group-hover:border-[#00f0ff] transition-colors" />
                     <div>
                       <div className="font-bold text-white text-lg group-hover:text-[#00f0ff] transition-colors">{c.username}</div>
                       <div className="text-xs text-[#888] font-mono uppercase truncate">{c.role}</div>
@@ -195,11 +196,11 @@ export default function ContributorsClient({ contributors }: { contributors: Con
                   </div>
 
                   <div className="col-span-1 md:col-span-4 flex justify-between md:block md:text-center">
-                    <span className="md:hidden text-xs text-[#555] font-mono uppercase">PRs</span>
+                    <span className="md:hidden text-xs text-[#888] font-mono uppercase">PRs</span>
                     <span className="font-mono font-bold text-white">{c.stats.prs}</span>
                   </div>
 
-                  <div className="col-span-1 hidden md:flex justify-end text-[#555] group-hover:text-[#e8ff47] transition-colors">
+                  <div className="col-span-1 hidden md:flex justify-end text-[#888] group-hover:text-[#e8ff47] transition-colors">
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>

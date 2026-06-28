@@ -87,7 +87,7 @@ export default function Home() {
                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
                <div className="w-3 h-3 rounded-full bg-green-500/80" />
              </div>
-             <div className="text-xs font-mono text-[#555] uppercase tracking-widest">Workflow Inspector</div>
+             <div className="text-xs font-mono text-[#888] uppercase tracking-widest">Workflow Inspector</div>
              <div className="w-16" />
           </div>
 
@@ -96,7 +96,7 @@ export default function Home() {
             {/* Left Nav */}
             <div className="w-64 border-r border-white/5 bg-[#0a0a0a] p-4 flex flex-col gap-6">
               <div>
-                <div className="text-[10px] text-[#555] font-mono uppercase tracking-widest mb-3">Live Sessions</div>
+                <div className="text-[10px] text-[#888] font-mono uppercase tracking-widest mb-3">Live Sessions</div>
                 <div className="flex flex-col gap-2">
                   <div className="p-3 rounded-lg border border-[#00f0ff]/30 bg-[#00f0ff]/5 flex items-center gap-3 cursor-pointer">
                     <span className="w-2 h-2 rounded-full bg-[#00f0ff] shadow-[0_0_8px_#00f0ff] animate-pulse" />
@@ -142,7 +142,7 @@ export default function Home() {
 
                 {/* Floating Metrics */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[80%] h-32 bg-black/80 rounded-xl border border-white/10 p-4 font-mono text-[11px] overflow-hidden">
-                  <div className="flex justify-between text-[#555] border-b border-white/5 pb-2 mb-2">
+                  <div className="flex justify-between text-[#888] border-b border-white/5 pb-2 mb-2">
                     <span>Terminal output</span>
                     <span>Status: ACTIVE</span>
                   </div>

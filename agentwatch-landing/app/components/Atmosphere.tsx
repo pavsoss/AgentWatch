@@ -1,7 +1,11 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import ThreeBackground from "./ThreeBackground";
+import dynamic from "next/dynamic";
+
+const ThreeBackground = dynamic(() => import("./ThreeBackground"), {
+  ssr: false,
+});
 import EdgeTraces from "./EdgeTraces";
 
 /**

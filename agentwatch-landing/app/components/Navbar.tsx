@@ -188,7 +188,7 @@ export default function Navbar() {
           </a>
         </div>
 
-        <button className="md:hidden text-[#888] hover:text-white transition-colors">
+        <button aria-label="Toggle menu" className="md:hidden text-[#888] hover:text-white transition-colors">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
             <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
