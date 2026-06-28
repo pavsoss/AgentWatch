@@ -32,10 +32,14 @@ async function getContributors() {
     const allPRs = prResults.flat();
 
     const prCounts: Record<string, number> = {};
+    const prDetails: Record<string, string[]> = {};
+
     allPRs.forEach((pr: any) => {
       // Only count PRs that have been merged
       if (pr.user && pr.user.login && pr.merged_at) {
         prCounts[pr.user.login] = (prCounts[pr.user.login] || 0) + 1;
+        if (!prDetails[pr.user.login]) prDetails[pr.user.login] = [];
+        prDetails[pr.user.login].push(pr.title || "");
       }
     });
 
@@ -78,12 +82,50 @@ async function getContributors() {
 
     // 5. Format for the UI
     let finalContributors = Array.from(userMap.values()).map((c: any) => {
-      let role = c.prs >= 5 ? "Core Contributor" : "Contributor";
-      let specialContribution = `Actively contributed with ${c.prs} merged PR${c.prs !== 1 ? 's' : ''}.`;
+      const titles = prDetails[c.username] || [];
+      const prCount = c.prs;
+
+      let docCount = 0, featCount = 0, fixCount = 0, uiCount = 0, perfCount = 0;
+      const areas = new Set<string>();
+
+      titles.forEach(t => {
+        const title = t.toLowerCase();
+        if (title.includes("docs") || title.includes("readme") || title.includes("typo")) { docCount++; areas.add("Documentation"); }
+        if (title.includes("feat") || title.includes("add") || title.includes("support")) { featCount++; areas.add("New Features"); }
+        if (title.includes("fix") || title.includes("bug") || title.includes("resolve")) { fixCount++; areas.add("Bug Fixes"); }
+        if (title.includes("ui") || title.includes("frontend") || title.includes("landing") || title.includes("design") || title.includes("style")) { uiCount++; areas.add("UI/UX"); }
+        if (title.includes("perf") || title.includes("optimize") || title.includes("fast")) { perfCount++; areas.add("Performance"); }
+        if (title.includes("refactor") || title.includes("clean") || title.includes("chore")) areas.add("Code Refactoring");
+        if (title.includes("ci") || title.includes("test") || title.includes("workflow")) areas.add("Infrastructure");
+      });
+
+      const max = Math.max(docCount, featCount, fixCount, uiCount, perfCount);
+      const baseRole = prCount >= 5 ? "Core" : "Community";
+      let role = `${baseRole} Contributor`;
       
+      if (max > 0) {
+        if (max === uiCount) role = `${baseRole} UI Contributor`;
+        else if (max === docCount) role = `${baseRole} Docs Contributor`;
+        else if (max === perfCount) role = `${baseRole} Performance Engineer`;
+        else if (max === featCount) role = `${baseRole} Feature Developer`;
+        else if (max === fixCount) role = `${baseRole} Bug Hunter`;
+      }
+
+      const areasList = Array.from(areas);
+      let specialContribution = "";
+      if (areasList.length === 0) {
+        specialContribution = `Contributed to codebase improvements across ${prCount} merged PR${prCount !== 1 ? 's' : ''}.`;
+      } else if (areasList.length === 1) {
+        specialContribution = `Specialized in ${areasList[0]} with ${prCount} merged PR${prCount !== 1 ? 's' : ''}.`;
+      } else if (areasList.length === 2) {
+        specialContribution = `Contributed to ${areasList[0]} and ${areasList[1]} across ${prCount} merged PR${prCount !== 1 ? 's' : ''}.`;
+      } else {
+        specialContribution = `Key contributions in ${areasList.slice(0, 2).join(', ')} and other areas across ${prCount} merged PR${prCount !== 1 ? 's' : ''}.`;
+      }
+
       if (c.username === "SHAURYASANYAL3") {
-        role = c.prs >= 5 ? "Core Contributor - Frontend Creator" : "Contributor - Frontend Creator";
-        specialContribution = `Architected the frontend. Contributed ${c.prs} merged PR${c.prs !== 1 ? 's' : ''} to the repository.`;
+        role = prCount >= 5 ? "Core Contributor - Frontend Architect" : "Contributor - Frontend Architect";
+        specialContribution = `Architected the frontend and actively optimizing performance. Contributed ${prCount} merged PR${prCount !== 1 ? 's' : ''}.`;
       }
 
       return {
