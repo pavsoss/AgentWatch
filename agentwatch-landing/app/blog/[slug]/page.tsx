@@ -10,7 +10,7 @@ export function generateStaticParams() {
   }));
 }
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   // Await params to avoid Next.js warnings about synchronous access to params
   const { slug } = await params;
   
@@ -94,7 +94,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
             className="btn-magnetic flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#e8ff47] text-[#050505] font-bold text-sm hover:bg-[#c4db33] transition-colors"
             style={{fontFamily: "var(--font-jetbrains)"}}
           >
-            Read Original Article
+            Visit Publisher
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
               <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
             </svg>

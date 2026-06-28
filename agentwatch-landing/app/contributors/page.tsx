@@ -1,5 +1,7 @@
 import ContributorsClient from "./ContributorsClient";
 import { Metadata } from "next";
+import { promises as fs } from "fs";
+import path from "path";
 
 export const metadata: Metadata = {
   title: "Hall of Fame | AgentWatch",
@@ -149,16 +151,49 @@ async function getContributors() {
     return finalContributors;
   } catch (error) {
     console.error("Error fetching contributors:", error);
-    // Fallback data
-    return [
-      {
-        username: "SHAURYASANYAL3",
-        avatarUrl: "https://avatars.githubusercontent.com/u/128920982?v=4",
-        role: "Contributor - Frontend Creator",
-        stats: { prs: 0, commits: 0 },
-        specialContribution: "Architected the frontend."
+    try {
+      const fileData = await fs.readFile(path.join(process.cwd(), "public", "contributors.json"), "utf8");
+      const fallback = JSON.parse(fileData);
+      
+      let finalContributors = fallback.contributors.map((c: any) => ({
+        username: c.login,
+        avatarUrl: c.avatar_url,
+        role: c.contributions >= 5 ? "Core Contributor" : "Community Contributor",
+        stats: { prs: c.contributions, commits: c.contributions },
+        specialContribution: `Contributed to codebase improvements across ${c.contributions} merged PRs.`
+      }));
+
+      // Ensure SHAURYASANYAL3 has correct role
+      const creator = finalContributors.find((c: any) => c.username === "SHAURYASANYAL3");
+      if (creator) {
+        creator.role = "Core Contributor - Frontend Architect";
+        creator.specialContribution = "Architected the frontend and actively optimizing performance.";
+      } else {
+        finalContributors.push({
+          username: "SHAURYASANYAL3",
+          avatarUrl: "https://avatars.githubusercontent.com/u/128920982?v=4",
+          role: "Core Contributor - Frontend Architect",
+          stats: { prs: 10, commits: 10 },
+          specialContribution: "Architected the frontend and actively optimizing performance."
+        });
       }
-    ];
+
+      // Filter out user 'sreerevanth' as per user requirements
+      finalContributors = finalContributors.filter((c: any) => c.username !== "sreerevanth");
+
+      return finalContributors.sort((a: any, b: any) => b.stats.prs - a.stats.prs);
+    } catch (fsError) {
+      console.error("Error reading fallback contributors.json:", fsError);
+      return [
+        {
+          username: "SHAURYASANYAL3",
+          avatarUrl: "https://avatars.githubusercontent.com/u/128920982?v=4",
+          role: "Core Contributor - Frontend Architect",
+          stats: { prs: 0, commits: 0 },
+          specialContribution: "Architected the frontend."
+        }
+      ];
+    }
   }
 }
 

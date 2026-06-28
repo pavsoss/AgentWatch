@@ -254,6 +254,7 @@ export default function HowItWorks() {
               <button
                 key={chap.id}
                 onClick={() => setActiveChapter(idx)}
+                aria-current={isActive ? "step" : undefined}
                 className={`playlist-item text-left p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group ${
                   isActive 
                     ? "bg-[#0a0a0a] border-[#e8ff47] shadow-[0_0_20px_rgba(232,255,71,0.15)] scale-[1.02]" 

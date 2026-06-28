@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import Features from "./components/Features";
@@ -14,7 +15,8 @@ export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    if (window.innerWidth < 768) return; // Skip heavy JS intro on mobile for instant LCP
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (window.innerWidth < 768 || prefersReduced) return; // Skip heavy JS intro on mobile for instant LCP
 
     const ctx = gsap.context(() => {
       // Entrance animations
@@ -69,12 +71,12 @@ export default function Home() {
         </p>
 
         <div className="stagger-in flex items-center gap-4">
-          <button className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#00f0ff] to-[#e8ff47] text-black font-bold hover:shadow-[0_0_30px_rgba(0,240,255,0.4)] transition-all hover:scale-[1.02]">
+          <Link href="#features" className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#00f0ff] to-[#e8ff47] text-black font-bold hover:shadow-[0_0_30px_rgba(0,240,255,0.4)] transition-all hover:scale-[1.02]">
             Start Monitoring Now
-          </button>
-          <button className="px-8 py-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur hover:bg-white/10 transition-all font-semibold">
+          </Link>
+          <Link href="https://github.com/sreerevanth/AgentWatch" className="px-8 py-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur hover:bg-white/10 transition-all font-semibold">
             View Documentation
-          </button>
+          </Link>
         </div>
       </section>
 
