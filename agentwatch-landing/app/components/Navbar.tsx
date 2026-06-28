@@ -20,13 +20,15 @@ export default function Navbar() {
   const [active, setActive] = useState<string | null>(null);
 
   useEffect(() => {
-    gsap.from(navRef.current, {
-      y: -80,
-      opacity: 0,
-      duration: 0.8,
-      ease: "power3.out",
-      delay: 0.2,
-    });
+    const ctx = gsap.context(() => {
+      gsap.from(navRef.current, {
+        y: -80,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out",
+        delay: 0.2,
+      });
+    }, navRef);
 
     const onScroll = () => {
       setScrolled(window.scrollY > 40);
@@ -52,6 +54,7 @@ export default function Navbar() {
     els.forEach((el) => obs.observe(el));
 
     return () => {
+      ctx.revert();
       window.removeEventListener("scroll", onScroll);
       obs.disconnect();
     };
