@@ -20,20 +20,12 @@ export default function Navbar() {
   const [active, setActive] = useState<string | null>(null);
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(navRef.current, {
-        y: -80,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out",
-        delay: 0.2,
-      });
-    }, navRef);
-
     const onScroll = () => {
       setScrolled(window.scrollY > 40);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
+    // Run once on mount to catch initial scroll state
+    onScroll();
 
     // Active section tracking via IntersectionObserver
     const ids = LINKS.filter((l) => l.section).map((l) => l.section!) as string[];
@@ -54,7 +46,6 @@ export default function Navbar() {
     els.forEach((el) => obs.observe(el));
 
     return () => {
-      ctx.revert();
       window.removeEventListener("scroll", onScroll);
       obs.disconnect();
     };
@@ -91,7 +82,7 @@ export default function Navbar() {
   return (
     <nav
       ref={navRef}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-300 ${
         scrolled
           ? "bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5"
           : "bg-transparent"
