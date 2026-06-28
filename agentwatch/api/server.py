@@ -33,6 +33,7 @@ from pydantic import BaseModel, Field
 
 from agentwatch.alerting.engine import AlertingConfig, AlertingEngine
 from agentwatch.api.auth import require_permission
+from agentwatch.api.entitlement import require_entitlement
 from agentwatch.api.middleware.rate_limiter import RateLimiter, RateLimitMiddleware
 from agentwatch.core.event_bus import get_event_bus
 from agentwatch.core.models import Repository, init_db
@@ -1172,7 +1173,10 @@ async def compliance_report(_auth: None = Depends(_require_api_key)) -> dict[str
 
 
 @app.get("/api/v1/governance/eu-ai-act-report")
-async def eu_ai_act_report(_auth: None = Depends(_require_api_key)) -> dict[str, Any]:
+async def eu_ai_act_report(
+    _auth: None = Depends(_require_api_key),
+    _ent: object = Depends(require_entitlement("compliance")),
+) -> dict[str, Any]:
     """EU AI Act Article 15 conformity export (CMP-004).
 
     Maps AgentWatch's safety telemetry to the Article 15 requirements and
