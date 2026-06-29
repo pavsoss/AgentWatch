@@ -61,6 +61,7 @@ from agentwatch.replay.counterfactual import CounterfactualEngine, Counterfactua
 from agentwatch.replay.engine import ReplayEngine
 from agentwatch.rollback.engine import RollbackEngine
 from agentwatch.scoring.confidence import ConfidenceScorer
+from agentwatch.security.abuse_detection import EntitlementUsageTracker
 from agentwatch.tracing.collector import TraceCollector
 from agentwatch.validation.schema_validator import SchemaValidator
 
@@ -246,6 +247,7 @@ _alerting = AlertingEngine(
 )
 _ws_clients: list[WebSocket] = []
 _schema_validator = SchemaValidator()
+_usage_tracker = EntitlementUsageTracker()
 
 
 def _init_default_schemas() -> None:
@@ -369,6 +371,11 @@ class SafetyCheckRequest(BaseModel):
     tool_name: str = "bash"
     arguments: dict[str, Any] = Field(default_factory=dict)
     affected_resources: list[str] = Field(default_factory=list)
+
+
+class EntitlementUsageReport(BaseModel):
+    subject: str = Field(min_length=1)
+    machine_id: str | None = None
 
 
 class ThreatPathNode(BaseModel):
@@ -1169,6 +1176,29 @@ async def dashboard_top(_auth: None = Depends(_require_api_key)) -> dict[str, An
 @app.get("/api/v1/governance/compliance-report")
 async def compliance_report(_auth: None = Depends(_require_api_key)) -> dict[str, Any]:
     return _compliance_reporter.generate().to_dict()
+
+
+@app.post("/api/v1/entitlement/usage")
+async def report_entitlement_usage(
+    report: EntitlementUsageReport,
+    x_machine_id: str | None = Header(default=None, alias="X-Machine-Id"),
+    _auth: None = Depends(_require_api_key),
+) -> dict[str, Any]:
+    """Record an entitlement usage heartbeat and flag cross-device abuse (#463)."""
+    machine_id = report.machine_id or x_machine_id
+    if not machine_id:
+        raise HTTPException(
+            status_code=400, detail="machine_id is required (body or X-Machine-Id header)."
+        )
+    event = _usage_tracker.record(report.subject, machine_id)
+    if event is not None:
+        logger.warning("Entitlement abuse: %s on %d devices", event.subject, event.distinct_devices)
+        await _alerting.alert_abuse(event)
+    return {
+        "recorded": True,
+        "abuse_detected": event is not None,
+        "active_devices": len(_usage_tracker.active_devices(report.subject)),
+    }
 
 
 @app.get("/api/v1/governance/eu-ai-act-report")
