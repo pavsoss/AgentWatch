@@ -1851,3 +1851,41 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+@app.command(name="doctor")
+def doctor() -> None:
+    """[bold]Doctor[/bold]: Check AgentWatch installation health."""
+    import os
+    import shutil
+    import subprocess  # nosec B404
+
+    table = Table(title="Health Diagnostics")
+    table.add_column("Component", style="cyan")
+    table.add_column("Status", style="green")
+
+    db_path = Path("agentwatch.db")
+    if db_path.exists():
+        table.add_row("Database", "OK")
+    else:
+        table.add_row("Database", "[yellow]Not initialized[/yellow]")
+
+    if "AGENTWATCH_API_KEY" in os.environ:
+        table.add_row("API Key", "Configured")
+    else:
+        table.add_row("API Key", "[red]Missing[/red]")
+
+    try:
+        docker_path = shutil.which("docker")
+        if docker_path:
+            res = subprocess.run([docker_path, "info"], capture_output=True, check=False)  # noqa: S603 # nosec B603
+            if res.returncode == 0:
+                table.add_row("Docker", "Running")
+            else:
+                table.add_row("Docker", "[red]Not running[/red]")
+        else:
+            table.add_row("Docker", "[red]Not installed[/red]")
+    except Exception:
+        table.add_row("Docker", "[red]Not installed[/red]")
+
+    console.print(table)
