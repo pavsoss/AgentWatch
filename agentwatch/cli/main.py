@@ -1833,3 +1833,30 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+@app.command(name="replay-session")
+@session_app.command(name="replay-session")
+def replay_session(
+    session_id: str = typer.Argument(..., help="ID of the session to replay"),
+    step: int = typer.Option(0, help="Step to resume from"),
+) -> None:
+    """[bold]Replay[/bold]: Rewind and resume failed agent sessions."""
+
+    async def _run():
+        from agentwatch.rollback.engine import RollbackEngine, RollbackStatus
+
+        engine = RollbackEngine()
+        res = await engine.rollback_session(session_id, to_step=step)
+        if res.status == RollbackStatus.COMPLETED:
+            console.print(
+                Panel(
+                    f"Session [cyan]{session_id}[/cyan] rewound to step [yellow]{step}[/yellow] and is ready to resume.",
+                    title="[blue]Replay-Session[/blue]",
+                    border_style="blue",
+                )
+            )
+        else:
+            console.print(f"[red]Failed to rewind: {res.error}[/red]")
+
+    asyncio.run(_run())
